@@ -35,6 +35,8 @@ models/*.joblib
 outputs/*.csv
 outputs/*.json
 outputs/*.txt
+outputs/*.npy
+outputs/*.pkl
 
 # Jupyter Notebook
 .ipynb_checkpoints
