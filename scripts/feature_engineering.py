@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from typing import Dict, Tuple
+from utils import parse_datetime_column
 
 
 def compute_team_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -149,7 +150,7 @@ def engineer_features(input_path: str = "outputs/filtered_games.csv") -> pd.Data
         DataFrame with all engineered features
     """
     df = pd.read_csv(input_path, low_memory=False)
-    df['gameDateTimeEst'] = pd.to_datetime(df['gameDateTimeEst'], format='mixed', utc=True).dt.tz_localize(None)
+    df = parse_datetime_column(df, 'gameDateTimeEst')
     
     # Compute team features
     df = compute_team_features(df)

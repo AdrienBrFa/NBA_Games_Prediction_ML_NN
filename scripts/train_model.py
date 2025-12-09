@@ -12,6 +12,7 @@ from datetime import datetime
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, callbacks
+from sklearn.metrics import confusion_matrix, log_loss
 
 
 def create_mlp_model(input_dim: int) -> keras.Model:
@@ -137,8 +138,6 @@ def evaluate_model(
     loss, accuracy, auc = model.evaluate(X, y, verbose=0)
     
     # Calculate additional metrics
-    from sklearn.metrics import confusion_matrix, log_loss
-    
     cm = confusion_matrix(y, y_pred)
     logloss = log_loss(y, y_pred_proba)
     

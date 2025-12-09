@@ -11,6 +11,7 @@ This script:
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from utils import parse_datetime_column
 
 
 def load_and_filter_games(data_path: str = "data/Games.csv") -> pd.DataFrame:
@@ -28,7 +29,7 @@ def load_and_filter_games(data_path: str = "data/Games.csv") -> pd.DataFrame:
     print(f"Initial rows: {len(df)}")
     
     # Parse date (handle mixed formats with and without timezone)
-    df['gameDateTimeEst'] = pd.to_datetime(df['gameDateTimeEst'], format='mixed', utc=True).dt.tz_localize(None)
+    df = parse_datetime_column(df, 'gameDateTimeEst')
     
     # Drop rows with missing scores
     df = df.dropna(subset=['homeScore', 'awayScore'])

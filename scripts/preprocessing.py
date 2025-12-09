@@ -15,6 +15,7 @@ from pathlib import Path
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from typing import Tuple, Dict
+from utils import parse_datetime_column
 
 
 def split_train_val_test(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -202,7 +203,7 @@ def save_preprocessed_data(
 if __name__ == "__main__":
     # Load engineered features
     df = pd.read_csv("outputs/features_engineered.csv", low_memory=False)
-    df['gameDateTimeEst'] = pd.to_datetime(df['gameDateTimeEst'], format='mixed', utc=True).dt.tz_localize(None)
+    df = parse_datetime_column(df, 'gameDateTimeEst')
     
     # Split data
     train_df, val_df, test_df = split_train_val_test(df)

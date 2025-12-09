@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "scripts"))
 
 from scripts.load_data import load_and_filter_games
-from scripts.feature_engineering import engineer_features
+from scripts.feature_engineering import compute_team_features, add_delta_features
 from scripts.preprocessing import split_train_val_test, preprocess_data, save_preprocessed_data
 from scripts.train_model import train_model, evaluate_model, save_results
 
@@ -43,7 +43,6 @@ def main():
     print("\n" + "="*80)
     print("STEP 2: Engineering features")
     print("="*80)
-    from scripts.feature_engineering import compute_team_features, add_delta_features
     df_features = compute_team_features(df_filtered.copy())
     df_features = add_delta_features(df_features)
     df_features.to_csv(output_path / "features_engineered.csv", index=False)
