@@ -19,6 +19,7 @@ from scripts.load_data import load_and_filter_games
 from scripts.feature_engineering import compute_team_features, add_delta_features
 from scripts.preprocessing import split_train_val_test, preprocess_data, save_preprocessed_data
 from scripts.train_model import train_model, evaluate_model, save_results
+from scripts.visualize import generate_comprehensive_report
 
 
 def main():
@@ -76,6 +77,31 @@ def main():
     # Save results
     save_results(train_metrics, val_metrics, test_metrics, history)
     
+    # Step 6: Generate comprehensive visualization report
+    print("\n" + "="*80)
+    print("STEP 6: Generating comprehensive visualization report")
+    print("="*80)
+    
+    # Get feature names from preprocessing objects
+    feature_names = preprocessing_objects['all_features']
+    
+    generate_comprehensive_report(
+        model=model,
+        X_train=X_train,
+        y_train=y_train,
+        X_val=X_val,
+        y_val=y_val,
+        X_test=X_test,
+        y_test=y_test,
+        history=history,
+        train_metrics=train_metrics,
+        val_metrics=val_metrics,
+        test_metrics=test_metrics,
+        feature_names=feature_names,
+        output_dir="outputs/plots",
+        show=False
+    )
+    
     # Summary
     print("\n" + "="*80)
     print("PIPELINE COMPLETE - SUMMARY")
@@ -88,6 +114,7 @@ def main():
     print(f"Final Test AUC: {test_metrics['auc']:.4f}")
     print(f"\nModel saved to: models/stage_a1_mlp.keras")
     print(f"Results saved to: outputs/results.json")
+    print(f"Visualizations saved to: outputs/plots/")
     print("="*80)
 
 

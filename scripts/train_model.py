@@ -13,6 +13,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, callbacks
 from sklearn.metrics import confusion_matrix, log_loss
+from scripts.visualize import plot_training_history
 
 
 def create_mlp_model(input_dim: int) -> keras.Model:
@@ -106,6 +107,10 @@ def train_model(
         callbacks=[early_stop, model_checkpoint],
         verbose=1
     )
+    
+    # Plot training history
+    print("\nGenerating training history plots...")
+    plot_training_history(history, save_path="outputs/plots/training_history.png", show=False)
     
     return model, history
 
