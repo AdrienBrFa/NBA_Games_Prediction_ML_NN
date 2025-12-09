@@ -30,9 +30,6 @@ def main():
     print("NBA Game Prediction - Stage A1 Pipeline")
     print("="*80)
     
-    # Archive previous results before starting new run
-    archive_previous_results()
-    
     # Step 1: Load and filter data
     print("\n" + "="*80)
     print("STEP 1: Loading and filtering data")
@@ -136,6 +133,14 @@ def main():
     print(f"\nModel saved to: models/stage_a1_mlp.keras")
     print(f"Results saved to: outputs/results.json")
     print(f"Visualizations saved to: outputs/plots/")
+    print("="*80)
+    
+    # Archive results at the end of the run
+    print("\n")
+    archive_previous_results()
+    
+    print("\n" + "="*80)
+    print("PIPELINE COMPLETE!")
     print("="*80)
 
 

@@ -11,7 +11,8 @@ from pathlib import Path
 from datetime import datetime
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers, callbacks, regularizers
+from tensorflow.keras import layers, callbacks  # type: ignore
+from tensorflow.keras import regularizers  # type: ignore
 from sklearn.metrics import confusion_matrix, log_loss, f1_score, roc_curve
 from scripts.visualize import plot_training_history
 
