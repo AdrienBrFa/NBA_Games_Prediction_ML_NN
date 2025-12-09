@@ -11,31 +11,39 @@ from pathlib import Path
 from datetime import datetime
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers, callbacks
-from sklearn.metrics import confusion_matrix, log_loss
+from tensorflow.keras import layers, callbacks, regularizers
+from sklearn.metrics import confusion_matrix, log_loss, f1_score, roc_curve
 from scripts.visualize import plot_training_history
 
 
-def create_mlp_model(input_dim: int) -> keras.Model:
+def create_mlp_model(input_dim: int, l2_reg: float = 0.001, dropout_rate: float = 0.3) -> keras.Model:
     """
-    Create a simple MLP model for binary classification.
+    Create a simple MLP model for binary classification with regularization.
     
-    Architecture (as specified in README):
+    Architecture:
     - Input layer: size = input_dim
-    - Hidden layer 1: Dense(64, activation="relu")
-    - Hidden layer 2: Dense(32, activation="relu")
+    - Hidden layer 1: Dense(64, activation="relu") + L2 regularization + Dropout
+    - Hidden layer 2: Dense(32, activation="relu") + L2 regularization + Dropout
     - Output layer: Dense(1, activation="sigmoid")
     
     Args:
         input_dim: Number of input features
+        l2_reg: L2 regularization strength
+        dropout_rate: Dropout rate for regularization
         
     Returns:
         Compiled Keras model
     """
     model = keras.Sequential([
         layers.Input(shape=(input_dim,)),
-        layers.Dense(64, activation='relu', name='hidden1'),
-        layers.Dense(32, activation='relu', name='hidden2'),
+        layers.Dense(64, activation='relu', 
+                    kernel_regularizer=regularizers.l2(l2_reg),
+                    name='hidden1'),
+        layers.Dropout(dropout_rate, name='dropout1'),
+        layers.Dense(32, activation='relu', 
+                    kernel_regularizer=regularizers.l2(l2_reg),
+                    name='hidden2'),
+        layers.Dropout(dropout_rate, name='dropout2'),
         layers.Dense(1, activation='sigmoid', name='output')
     ])
     
@@ -53,11 +61,13 @@ def train_model(
     X_val: np.ndarray, y_val: np.ndarray,
     epochs: int = 100,
     batch_size: int = 64,
-    patience: int = 10,
+    patience: int = 5,
+    l2_reg: float = 0.001,
+    dropout_rate: float = 0.3,
     model_save_path: str = "models/stage_a1_mlp.keras"
 ) -> tuple:
     """
-    Train the MLP model with early stopping.
+    Train the MLP model with early stopping and regularization.
     
     Args:
         X_train: Training features
@@ -66,7 +76,9 @@ def train_model(
         y_val: Validation labels
         epochs: Maximum number of epochs
         batch_size: Batch size for training
-        patience: Early stopping patience
+        patience: Early stopping patience (default: 5)
+        l2_reg: L2 regularization strength
+        dropout_rate: Dropout rate
         model_save_path: Path to save the best model
         
     Returns:
@@ -74,7 +86,12 @@ def train_model(
     """
     print("Creating model...")
     input_dim = X_train.shape[1]
-    model = create_mlp_model(input_dim)
+    model = create_mlp_model(input_dim, l2_reg=l2_reg, dropout_rate=dropout_rate)
+    
+    print(f"\nModel configuration:")
+    print(f"  L2 regularization: {l2_reg}")
+    print(f"  Dropout rate: {dropout_rate}")
+    print(f"  Early stopping patience: {patience} epochs")
     
     print(f"\nModel architecture:")
     model.summary()
@@ -94,6 +111,14 @@ def train_model(
         verbose=1
     )
     
+    reduce_lr = callbacks.ReduceLROnPlateau(
+        monitor='val_loss',
+        factor=0.5,
+        patience=3,
+        min_lr=1e-6,
+        verbose=1
+    )
+    
     # Train model
     print(f"\nTraining model...")
     print(f"Training samples: {len(X_train)}")
@@ -104,7 +129,7 @@ def train_model(
         validation_data=(X_val, y_val),
         epochs=epochs,
         batch_size=batch_size,
-        callbacks=[early_stop, model_checkpoint],
+        callbacks=[early_stop, model_checkpoint, reduce_lr],
         verbose=1
     )
     
@@ -115,11 +140,70 @@ def train_model(
     return model, history
 
 
+def find_optimal_threshold(
+    y_true: np.ndarray,
+    y_pred_proba: np.ndarray,
+    method: str = 'f1'
+) -> tuple:
+    """
+    Find optimal decision threshold based on validation set.
+    
+    Args:
+        y_true: True labels
+        y_pred_proba: Predicted probabilities
+        method: Method to use ('f1', 'youden', 'balanced')
+            - 'f1': Maximize F1 score
+            - 'youden': Maximize Youden's J statistic (sensitivity + specificity - 1)
+            - 'balanced': Minimize difference between sensitivity and specificity
+    
+    Returns:
+        Tuple of (optimal_threshold, metric_value)
+    """
+    thresholds = np.linspace(0.1, 0.9, 81)  # Test thresholds from 0.1 to 0.9
+    best_threshold = 0.5
+    best_metric = 0.0
+    
+    if method == 'f1':
+        for threshold in thresholds:
+            y_pred = (y_pred_proba >= threshold).astype(int)
+            f1 = f1_score(y_true, y_pred)
+            if f1 > best_metric:
+                best_metric = f1
+                best_threshold = threshold
+        print(f"\nOptimal threshold (F1): {best_threshold:.3f} (F1={best_metric:.4f})")
+    
+    elif method == 'youden':
+        fpr, tpr, roc_thresholds = roc_curve(y_true, y_pred_proba)
+        # Youden's J statistic = Sensitivity + Specificity - 1 = TPR - FPR
+        j_scores = tpr - fpr
+        best_idx = np.argmax(j_scores)
+        best_threshold = roc_thresholds[best_idx]
+        best_metric = j_scores[best_idx]
+        print(f"\nOptimal threshold (Youden): {best_threshold:.3f} (J={best_metric:.4f})")
+    
+    elif method == 'balanced':
+        for threshold in thresholds:
+            y_pred = (y_pred_proba >= threshold).astype(int)
+            cm = confusion_matrix(y_true, y_pred)
+            if cm.sum() > 0:
+                tn, fp, fn, tp = cm.ravel()
+                sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
+                specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
+                balance_metric = 1 - abs(sensitivity - specificity)
+                if balance_metric > best_metric:
+                    best_metric = balance_metric
+                    best_threshold = threshold
+        print(f"\nOptimal threshold (Balanced): {best_threshold:.3f} (Balance={best_metric:.4f})")
+    
+    return best_threshold, best_metric
+
+
 def evaluate_model(
     model: keras.Model,
     X: np.ndarray,
     y: np.ndarray,
-    set_name: str = "Test"
+    set_name: str = "Test",
+    threshold: float = 0.5
 ) -> dict:
     """
     Evaluate model and return metrics.
@@ -129,15 +213,16 @@ def evaluate_model(
         X: Features
         y: True labels
         set_name: Name of the dataset (for printing)
+        threshold: Decision threshold (default: 0.5)
         
     Returns:
         Dictionary of metrics
     """
-    print(f"\nEvaluating on {set_name} set...")
+    print(f"\nEvaluating on {set_name} set (threshold={threshold:.3f})...")
     
     # Get predictions
     y_pred_proba = model.predict(X, verbose=0).flatten()
-    y_pred = (y_pred_proba >= 0.5).astype(int)
+    y_pred = (y_pred_proba >= threshold).astype(int)
     
     # Calculate metrics
     loss, accuracy, auc = model.evaluate(X, y, verbose=0)
@@ -153,7 +238,9 @@ def evaluate_model(
         'log_loss': float(logloss),
         'confusion_matrix': cm.tolist(),
         'num_samples': len(y),
-        'positive_rate': float(y.mean())
+        'positive_rate': float(y.mean()),
+        'threshold': float(threshold),
+        'f1_score': float(f1_score(y, y_pred))
     }
     
     # Print results
@@ -161,6 +248,7 @@ def evaluate_model(
     print(f"  Loss: {loss:.4f}")
     print(f"  Accuracy: {accuracy:.4f}")
     print(f"  AUC: {auc:.4f}")
+    print(f"  F1 Score: {metrics['f1_score']:.4f}")
     print(f"  Log Loss: {logloss:.4f}")
     print(f"  Confusion Matrix:")
     print(f"    {cm}")
@@ -173,11 +261,13 @@ def save_results(
     val_metrics: dict,
     test_metrics: dict,
     history: keras.callbacks.History,
+    optimal_threshold: float = 0.5,
     output_path: str = "outputs/results.json"
 ):
     """Save training and evaluation results."""
     results = {
         'timestamp': datetime.now().isoformat(),
+        'optimal_threshold': float(optimal_threshold),
         'train_metrics': train_metrics,
         'val_metrics': val_metrics,
         'test_metrics': test_metrics,
