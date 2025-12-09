@@ -28,119 +28,90 @@ def compute_team_features(df: pd.DataFrame) -> pd.DataFrame:
         DataFrame with added feature columns
     """
     print("Computing team historical features...")
+    print(f"Processing {len(df)} games...")
     
-    # Initialize feature columns
-    feature_cols = [
-        'home_season_games_played', 'home_season_wins', 'home_season_losses', 'home_season_win_pct',
-        'home_last5_games_played', 'home_last5_win_pct', 'home_last5_avg_point_diff',
-        'home_days_since_last_game',
-        'away_season_games_played', 'away_season_wins', 'away_season_losses', 'away_season_win_pct',
-        'away_last5_games_played', 'away_last5_win_pct', 'away_last5_avg_point_diff',
-        'away_days_since_last_game'
-    ]
+    # Create a long format dataset where each row is a team-game combination
+    home_games = df[['gameDateTimeEst', 'seasonYear', 'hometeamId', 'homeScore', 'awayScore']].copy()
+    home_games.columns = ['date', 'season', 'team', 'team_score', 'opp_score']
+    home_games['is_home'] = 1
     
-    for col in feature_cols:
-        df[col] = np.nan
+    away_games = df[['gameDateTimeEst', 'seasonYear', 'awayteamId', 'awayScore', 'homeScore']].copy()
+    away_games.columns = ['date', 'season', 'team', 'team_score', 'opp_score']
+    away_games['is_home'] = 0
     
-    # Process each team and season separately
-    teams = pd.concat([df['hometeamId'], df['awayteamId']]).unique()
+    # Combine and sort
+    all_team_games = pd.concat([home_games, away_games], ignore_index=True)
+    all_team_games = all_team_games.sort_values(['team', 'season', 'date']).reset_index(drop=True)
     
-    for team_id in teams:
-        for season in df['seasonYear'].unique():
-            # Get all games for this team in this season
-            team_mask_home = (df['hometeamId'] == team_id) & (df['seasonYear'] == season)
-            team_mask_away = (df['awayteamId'] == team_id) & (df['seasonYear'] == season)
-            team_games_indices = df[team_mask_home | team_mask_away].index.tolist()
-            
-            # Sort by date
-            team_games_indices.sort(key=lambda idx: df.loc[idx, 'gameDateTimeEst'])
-            
-            # Process each game chronologically
-            for i, game_idx in enumerate(team_games_indices):
-                # Get previous games (games before current game in chronological order)
-                prev_indices = team_games_indices[:i]
-                
-                if len(prev_indices) == 0:
-                    # No previous games - use default values
-                    games_played = 0
-                    wins = 0
-                    losses = 0
-                    win_pct = 0.5
-                    last5_games_played = 0
-                    last5_win_pct = 0.5
-                    last5_avg_point_diff = 0.0
-                    days_since_last = np.nan
-                else:
-                    # Compute season statistics from all previous games
-                    games_played = len(prev_indices)
-                    wins = 0
-                    point_diffs = []
-                    
-                    for prev_idx in prev_indices:
-                        prev_game = df.loc[prev_idx]
-                        # Determine if team won and compute point differential
-                        if prev_game['hometeamId'] == team_id:
-                            team_score = prev_game['homeScore']
-                            opp_score = prev_game['awayScore']
-                        else:
-                            team_score = prev_game['awayScore']
-                            opp_score = prev_game['homeScore']
-                        
-                        if team_score > opp_score:
-                            wins += 1
-                        point_diffs.append(team_score - opp_score)
-                    
-                    losses = games_played - wins
-                    win_pct = wins / games_played
-                    
-                    # Compute last 5 statistics
-                    last5_indices = prev_indices[-5:]
-                    last5_games_played = len(last5_indices)
-                    last5_wins = 0
-                    last5_point_diffs = []
-                    
-                    for prev_idx in last5_indices:
-                        prev_game = df.loc[prev_idx]
-                        if prev_game['hometeamId'] == team_id:
-                            team_score = prev_game['homeScore']
-                            opp_score = prev_game['awayScore']
-                        else:
-                            team_score = prev_game['awayScore']
-                            opp_score = prev_game['homeScore']
-                        
-                        if team_score > opp_score:
-                            last5_wins += 1
-                        last5_point_diffs.append(team_score - opp_score)
-                    
-                    last5_win_pct = last5_wins / last5_games_played if last5_games_played > 0 else 0.5
-                    last5_avg_point_diff = np.mean(last5_point_diffs) if last5_point_diffs else 0.0
-                    
-                    # Days since last game
-                    last_game_idx = prev_indices[-1]
-                    current_date = df.loc[game_idx, 'gameDateTimeEst']
-                    last_date = df.loc[last_game_idx, 'gameDateTimeEst']
-                    days_since_last = (current_date - last_date).days
-                
-                # Assign features based on whether team is home or away
-                current_game = df.loc[game_idx]
-                if current_game['hometeamId'] == team_id:
-                    df.loc[game_idx, 'home_season_games_played'] = games_played
-                    df.loc[game_idx, 'home_season_wins'] = wins
-                    df.loc[game_idx, 'home_season_losses'] = losses
-                    df.loc[game_idx, 'home_season_win_pct'] = win_pct
-                    df.loc[game_idx, 'home_last5_games_played'] = last5_games_played
-                    df.loc[game_idx, 'home_last5_win_pct'] = last5_win_pct
-                    df.loc[game_idx, 'home_last5_avg_point_diff'] = last5_avg_point_diff
-                    df.loc[game_idx, 'home_days_since_last_game'] = days_since_last
-                else:
-                    df.loc[game_idx, 'away_season_games_played'] = games_played
-                    df.loc[game_idx, 'away_season_wins'] = wins
-                    df.loc[game_idx, 'away_season_losses'] = losses
-                    df.loc[game_idx, 'away_season_win_pct'] = win_pct
-                    df.loc[game_idx, 'away_last5_games_played'] = last5_games_played
-                    df.loc[game_idx, 'away_last5_win_pct'] = last5_win_pct
-                    df.loc[game_idx, 'away_last5_avg_point_diff'] = last5_avg_point_diff
-                    df.loc[game_idx, 'away_days_since_last_game'] = days_since_last
+    # Compute team-level stats
+    all_team_games['won'] = (all_team_games['team_score'] > all_team_games['opp_score']).astype(int)
+    all_team_games['point_diff'] = all_team_games['team_score'] - all_team_games['opp_score']
+    
+    # Compute cumulative stats (shifted to avoid leakage)
+    all_team_games['games_played'] = all_team_games.groupby(['team', 'season']).cumcount()
+    all_team_games['season_wins'] = all_team_games.groupby(['team', 'season'])['won'].cumsum() - all_team_games['won']
+    all_team_games['season_games'] = all_team_games['games_played']
+    all_team_games['season_losses'] = all_team_games['season_games'] - all_team_games['season_wins']
+    
+    # Win percentage with default
+    all_team_games['season_win_pct'] = all_team_games['season_wins'] / all_team_games['season_games']
+    all_team_games.loc[all_team_games['season_games'] == 0, 'season_win_pct'] = 0.5
+    
+    # Last 5 games statistics using rolling windows
+    all_team_games['last5_wins'] = (
+        all_team_games.groupby(['team', 'season'])['won']
+        .transform(lambda x: x.shift(1).rolling(5, min_periods=1).sum())
+    )
+    all_team_games['last5_games'] = (
+        all_team_games.groupby(['team', 'season'])['won']
+        .transform(lambda x: x.shift(1).rolling(5, min_periods=1).count())
+    )
+    all_team_games['last5_point_diff'] = (
+        all_team_games.groupby(['team', 'season'])['point_diff']
+        .transform(lambda x: x.shift(1).rolling(5, min_periods=1).mean())
+    )
+    
+    # Fill NaN for first game of season
+    all_team_games['last5_games'] = all_team_games['last5_games'].fillna(0)
+    all_team_games['last5_wins'] = all_team_games['last5_wins'].fillna(0)
+    all_team_games['last5_point_diff'] = all_team_games['last5_point_diff'].fillna(0.0)
+    
+    # Win percentage for last 5
+    all_team_games['last5_win_pct'] = all_team_games['last5_wins'] / all_team_games['last5_games']
+    all_team_games.loc[all_team_games['last5_games'] == 0, 'last5_win_pct'] = 0.5
+    
+    # Days since last game
+    all_team_games['prev_date'] = all_team_games.groupby(['team', 'season'])['date'].shift(1)
+    all_team_games['days_since_last'] = (all_team_games['date'] - all_team_games['prev_date']).dt.days
+    
+    # Split back to home and away
+    home_stats = all_team_games[all_team_games['is_home'] == 1].copy()
+    away_stats = all_team_games[all_team_games['is_home'] == 0].copy()
+    
+    # Merge back to original dataframe
+    df = df.sort_values('gameDateTimeEst').reset_index(drop=True)
+    home_stats = home_stats.sort_values('date').reset_index(drop=True)
+    away_stats = away_stats.sort_values('date').reset_index(drop=True)
+    
+    # Add home features
+    df['home_season_games_played'] = home_stats['season_games'].values
+    df['home_season_wins'] = home_stats['season_wins'].values
+    df['home_season_losses'] = home_stats['season_losses'].values
+    df['home_season_win_pct'] = home_stats['season_win_pct'].values
+    df['home_last5_games_played'] = home_stats['last5_games'].values
+    df['home_last5_win_pct'] = home_stats['last5_win_pct'].values
+    df['home_last5_avg_point_diff'] = home_stats['last5_point_diff'].values
+    df['home_days_since_last_game'] = home_stats['days_since_last'].values
+    
+    # Add away features
+    df['away_season_games_played'] = away_stats['season_games'].values
+    df['away_season_wins'] = away_stats['season_wins'].values
+    df['away_season_losses'] = away_stats['season_losses'].values
+    df['away_season_win_pct'] = away_stats['season_win_pct'].values
+    df['away_last5_games_played'] = away_stats['last5_games'].values
+    df['away_last5_win_pct'] = away_stats['last5_win_pct'].values
+    df['away_last5_avg_point_diff'] = away_stats['last5_point_diff'].values
+    df['away_days_since_last_game'] = away_stats['days_since_last'].values
     
     print("Team features computed successfully")
     return df
@@ -177,8 +148,8 @@ def engineer_features(input_path: str = "outputs/filtered_games.csv") -> pd.Data
     Returns:
         DataFrame with all engineered features
     """
-    df = pd.read_csv(input_path)
-    df['gameDateTimeEst'] = pd.to_datetime(df['gameDateTimeEst'])
+    df = pd.read_csv(input_path, low_memory=False)
+    df['gameDateTimeEst'] = pd.to_datetime(df['gameDateTimeEst'], format='mixed', utc=True).dt.tz_localize(None)
     
     # Compute team features
     df = compute_team_features(df)

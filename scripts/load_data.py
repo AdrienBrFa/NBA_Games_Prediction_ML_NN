@@ -24,11 +24,11 @@ def load_and_filter_games(data_path: str = "data/Games.csv") -> pd.DataFrame:
         Filtered DataFrame with seasonYear and target variable
     """
     print("Loading Games.csv...")
-    df = pd.read_csv(data_path)
+    df = pd.read_csv(data_path, low_memory=False)
     print(f"Initial rows: {len(df)}")
     
-    # Parse date
-    df['gameDateTimeEst'] = pd.to_datetime(df['gameDateTimeEst'])
+    # Parse date (handle mixed formats with and without timezone)
+    df['gameDateTimeEst'] = pd.to_datetime(df['gameDateTimeEst'], format='mixed', utc=True).dt.tz_localize(None)
     
     # Drop rows with missing scores
     df = df.dropna(subset=['homeScore', 'awayScore'])

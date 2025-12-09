@@ -201,8 +201,8 @@ def save_preprocessed_data(
 
 if __name__ == "__main__":
     # Load engineered features
-    df = pd.read_csv("outputs/features_engineered.csv")
-    df['gameDateTimeEst'] = pd.to_datetime(df['gameDateTimeEst'])
+    df = pd.read_csv("outputs/features_engineered.csv", low_memory=False)
+    df['gameDateTimeEst'] = pd.to_datetime(df['gameDateTimeEst'], format='mixed', utc=True).dt.tz_localize(None)
     
     # Split data
     train_df, val_df, test_df = split_train_val_test(df)
