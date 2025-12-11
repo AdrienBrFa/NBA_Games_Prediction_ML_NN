@@ -1,29 +1,101 @@
 # NBA_Games_Prediction_ML_NN
 This is a Machine Learning Model using a Neural Network to predict NBA Games outcomes based on historical data
-# NBA Game Outcome Prediction with Neural Networks (Stage A1 – Games.csv Only)
+
+## 🚀 Quick Start
+
+**Current Status**: Stage A1 is complete and optimized. Stage B1 is ready for team statistics integration.
+
+```bash
+# Run Stage A1 (historical features only)
+python run_stage_a1.py
+
+# Run Stage B1 (team statistics - coming soon)
+python run_stage_b1.py
+
+# Analyze results and compare runs
+python analyze_results.py
+```
+
+**Documentation**:
+- [Stage A1 Analysis & Results](docs/stage_a1_analysis.md)
+- [Repository Structure](docs/repo_structure.md)
+- [Model Improvements Guide](docs/model_improvements.md)
+- [Archiving System](docs/archiving_system.md)
+
+---
+
+# NBA Game Outcome Prediction with Neural Networks
 
 > IMPORTANT NOTE  
-> In addition to this README, the repository MUST include a separate documentation file  
-> (for example: `docs/repo_structure.md`) that explains concretely what each file/script/notebook  
-> in this repository does and how they fit together to build and run the model.
+> In addition to this README, the repository includes comprehensive documentation  
+> in the `docs/` folder that explains each component and how they fit together.
 
 This project is a learning-oriented machine learning pipeline to predict NBA game outcomes
-(using a neural network) based on historical game data.
+using neural networks based on historical data.
 
 The work is structured in **stages** along two axes:
 
 1. **Data complexity**  
-   - Stage A: `Games.csv` only  
-   - Stage B: `Games.csv` + `TeamStatistics.csv`  
-   - Stage C: `Games.csv` + `TeamStatistics.csv` + `PlayerStatistics.csv`
+   - **Stage A**: `Games.csv` only ✅ **COMPLETE**
+   - **Stage B**: `Games.csv` + `TeamStatistics.csv` 🔄 **IN PROGRESS**
+   - **Stage C**: `Games.csv` + `TeamStatistics.csv` + `PlayerStatistics.csv` 📋 **PLANNED**
 
 2. **Model complexity**  
-   - Model 1: Simple MLP (baseline)  
-   - Model 2: MLP with embeddings and regularization  
-   - Model 3: Sequence-based model (LSTM/GRU/CNN 1D on recent games)
+   - **Model 1**: Simple MLP (baseline) ✅ **COMPLETE**
+   - **Model 2**: MLP with embeddings and regularization 📋 **PLANNED**
+   - **Model 3**: Sequence-based model (LSTM/GRU/CNN 1D) 📋 **PLANNED**
 
-This README describes **Stage A1**:  
-**Data Stage A (Games only) × Model 1 (Simple MLP)**.
+## Current Implementation
+
+### Stage A1 ✅ (Complete)
+**Data Stage A (Games only) × Model 1 (Simple MLP with regularization)**
+
+Files:
+- `run_stage_a1.py` - Main pipeline for Stage A1
+- Results in `outputs/stage_a1/`
+- Archives in `archives/stage_a1/`
+
+**Performance** (Run 2 - optimized):
+- Test Accuracy: **58.55%**
+- Test AUC: **0.5984**
+- Test F1-Score: **0.7098**
+
+See [Stage A1 Analysis](docs/stage_a1_analysis.md) for detailed comparison and improvements.
+
+### Stage B1 ✅ (Complete)
+**Data Stage B (Games + Team Statistics) × Model 1 (Simple MLP)**
+
+Files:
+- `run_stage_b1.py` - Main pipeline for Stage B1
+- `features/stage_b1_teamstats.py` - Team statistics feature engineering
+- Results in `outputs/stage_b1/`
+- Archives in `archives/stage_b1/`
+
+**Stage B1 extends Stage A1 by adding:**
+- **Rolling team statistics** (last 5, 10 games):
+  - Scoring: points for/against, point differential
+  - Shooting: FG%, 3P%, FT%
+  - Advanced: offensive/defensive/net rating, pace
+  - Rebounds, assists, turnovers, steals, blocks
+- **Home/away split features**: Performance in home vs away games
+- **Delta features**: Direct matchup comparisons (home - away)
+- **NO DATA LEAKAGE**: Rolling features computed only from past games
+
+**Expected Performance Target**: Test AUC 0.62–0.65 (vs 0.598 in Stage A1)
+
+See [Stage B1 Design Document](docs/stage_b1_design.md) for complete feature specifications.
+
+**Run Stage B1:**
+```bash
+python run_stage_b1.py
+
+# Validate implementation
+python test_stage_b1.py
+```
+
+---
+
+## Stage A1 Details
 
 The goal of Stage A1 is:
 - to build a clean and understandable pipeline end-to-end,
@@ -437,5 +509,113 @@ After Stage A1 is implemented and understood:
 
 These stages are deliberately **out of scope for this README**, which focuses on
 a clean, understandable, and working Stage A1.
+
+---
+
+## 6. Running the Pipeline
+
+### Stage A1 (Historical Features Only)
+
+```bash
+# Run the complete Stage A1 pipeline
+python run_stage_a1.py
+```
+
+**What it does**:
+1. Loads and filters Games.csv
+2. Engineers historical features (win rates, last 5 games, rest days)
+3. Preprocesses data (one-hot encoding, scaling)
+4. Trains MLP with L2 regularization and Dropout
+5. Optimizes decision threshold on validation set
+6. Generates comprehensive visualizations
+7. Archives results for future comparison
+
+**Outputs**:
+- Model: `models/stage_a1/mlp.keras`
+- Results: `outputs/stage_a1/results.json`
+- Plots: `outputs/stage_a1/plots/`
+- Archive: `archives/stage_a1/run_YYYYMMDD_HHMMSS/`
+
+### Stage B1 (Team Statistics) - Coming Soon
+
+```bash
+# Run the complete Stage B1 pipeline
+python run_stage_b1.py
+```
+
+**Status**: Pipeline structure is ready. Currently uses Stage A1 features.  
+**Next step**: Integrate TeamStatistics.csv for offensive/defensive ratings, shooting efficiency, etc.
+
+**Outputs** (when implemented):
+- Model: `models/stage_b1/mlp.keras`
+- Results: `outputs/stage_b1/results.json`
+- Plots: `outputs/stage_b1/plots/`
+- Archive: `archives/stage_b1/run_YYYYMMDD_HHMMSS/`
+
+### Analyzing Results
+
+```bash
+# Analyze current results and compare with previous runs
+python analyze_results.py
+
+# List all archived runs
+python scripts/archive_manager.py --list
+
+# Compare specific runs
+python scripts/archive_manager.py --compare archives/stage_a1/run_20251209_193450
+```
+
+### File Organization
+
+```
+NBA_Games_Predictions_ML_NN/
+├── run_stage_a1.py          # Stage A1 pipeline (complete)
+├── run_stage_b1.py          # Stage B1 pipeline (structure ready)
+├── run_pipeline.py          # Deprecated - redirects to Stage A1
+├── analyze_results.py       # Results analysis and comparison
+├── outputs/
+│   ├── stage_a1/           # Stage A1 results
+│   │   ├── results.json
+│   │   ├── plots/
+│   │   ├── X_train.npy, y_train.npy, etc.
+│   │   └── preprocessing_objects.pkl
+│   └── stage_b1/           # Stage B1 results (when implemented)
+├── archives/
+│   ├── stage_a1/           # Stage A1 archived runs
+│   │   ├── run_20251209_191510/
+│   │   └── run_20251209_193450/
+│   └── stage_b1/           # Stage B1 archived runs
+├── models/
+│   ├── stage_a1/           # Stage A1 models
+│   │   └── mlp.keras
+│   └── stage_b1/           # Stage B1 models
+└── docs/
+    ├── stage_a1_analysis.md    # Complete Stage A1 analysis
+    ├── model_improvements.md    # Improvement documentation
+    ├── archiving_system.md      # Archive system guide
+    └── repo_structure.md        # Code structure
+```
+
+---
+
+## 7. Next Steps (Beyond Stage A1)
+
+After Stage A1 is implemented and understood:
+
+- **Stage B1**:
+  - ✅ Pipeline structure created
+  - 🔄 Integrate `TeamStatistics.csv`
+  - Add offensive/defensive ratings, shooting efficiency, pace
+  - Add rolling averages for team stats
+  - Expected improvement: Test AUC 0.598 → 0.62–0.65
+
+- **Stage B2** (optional):
+  - Replace one-hot encoding with team embeddings
+  - Learn team representations
+
+- **Stage C1–C3**:
+  - Aggregate `PlayerStatistics.csv` at team level
+  - Injury reports, player availability
+  - Experiment with sequence-based models (LSTM/GRU/CNN 1D) over recent games
 
 ---

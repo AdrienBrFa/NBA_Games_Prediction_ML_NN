@@ -1,7 +1,9 @@
 # Stage A1 – Results & Improvements
 
-Stage A1 is the first modeling stage of the project.  
+**Stage A1** is the first modeling stage of the project.  
 It uses **Games.csv only**, engineered team history features, and a **simple MLP classifier**.
+
+**How to run**: `python run_stage_a1.py`
 
 Two major experiments have been run and archived:
 
@@ -293,17 +295,20 @@ To break through the 0.60 AUC barrier, incorporate **TeamStatistics.csv**:
 Thanks to the archiving system, all experiments are fully reproducible:
 
 ```bash
-# View all runs
+# Run Stage A1
+python run_stage_a1.py
+
+# View all Stage A1 runs
 python scripts/archive_manager.py --list
 
-# Compare specific runs
+# Compare specific Stage A1 runs
 python scripts/archive_manager.py --compare \
-  archives/run_20251209_191510 \
-  archives/run_20251209_193450
+  archives/stage_a1/run_20251209_191510 \
+  archives/stage_a1/run_20251209_193450
 
 # Restore a previous model
-cp archives/run_20251209_193450/models/stage_a1_mlp.keras \
-   models/stage_a1_mlp.keras
+cp archives/stage_a1/run_20251209_193450/models/stage_a1/mlp.keras \
+   models/stage_a1/mlp.keras
 ```
 
 Each archive contains:
@@ -311,6 +316,13 @@ Each archive contains:
 - ✅ `models/` – Saved model
 - ✅ `plots/` – All visualizations
 - ✅ `archive_info.json` – Metadata & timestamp
+
+**Stage separation**: Stage A1 and Stage B1 have independent:
+- Output directories: `outputs/stage_a1/` vs `outputs/stage_b1/`
+- Model directories: `models/stage_a1/` vs `models/stage_b1/`
+- Archive directories: `archives/stage_a1/` vs `archives/stage_b1/`
+
+This ensures no cross-contamination between experimental stages.
 
 ---
 
@@ -326,3 +338,8 @@ Each archive contains:
 ---
 
 **Status**: Stage A1 is complete and optimized. Ready for Stage B (team statistics integration).
+
+**Next steps**: 
+- Run Stage B1 with `python run_stage_b1.py` (structure ready)
+- Integrate TeamStatistics.csv features
+- Compare Stage A1 vs Stage B1 performance using the archiving system
