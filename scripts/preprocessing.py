@@ -75,24 +75,68 @@ def preprocess_data(
     y_val = val_df['y'].values
     y_test = test_df['y'].values
     
-    # Identify all numeric features dynamically (exclude ID columns and target)
+    # CRITICAL: Exclude ALL current game statistics (they leak the outcome!)
+    # Only keep: Stage A1 features + rolling features (_last5, _last10, etc.)
     exclude_cols = [
-        'gameId', 'gameDateTimeEst', 'hometeamId', 'awayteamId', 
+        # Metadata columns
+        'gameId', 'gameDateTimeEst', 'hometeamId', 'awayteamId', 'year', 'month', 'day',
         'hometeamCity', 'hometeamName', 'awayteamCity', 'awayteamName',
-        'homeScore', 'awayScore', 'winner', 'y',
-        'home_teamCity', 'home_teamName', 'away_teamCity', 'away_teamName',
-        'home_opponentTeamCity', 'home_opponentTeamName', 'away_opponentTeamCity', 'away_opponentTeamName',
-        'home_teamId_merged', 'away_teamId_merged', 'home_opponentTeamId', 'away_opponentTeamId',
-        'home_home', 'away_home', 'home_win', 'away_win', 'home_coachId', 'away_coachId'
+        'homeScore', 'awayScore', 'winner', 'y', 'gameType', 'attendance', 'arenaId',
+        'gameLabel', 'gameSubLabel', 'seriesGameNumber',
+        
+        # CURRENT GAME STATS (home team) - THESE LEAK THE OUTCOME!
+        'gameDateTimeEst_home_merge',
+        'home_teamCity', 'home_teamName', 'home_teamId_merged',
+        'home_opponentTeamCity', 'home_opponentTeamName', 'home_opponentTeamId',
+        'home_home', 'home_win', 'home_teamScore', 'home_opponentScore',
+        'home_assists', 'home_blocks', 'home_steals',
+        'home_fieldGoalsAttempted', 'home_fieldGoalsMade', 'home_fieldGoalsPercentage',
+        'home_threePointersAttempted', 'home_threePointersMade', 'home_threePointersPercentage',
+        'home_freeThrowsAttempted', 'home_freeThrowsMade', 'home_freeThrowsPercentage',
+        'home_reboundsDefensive', 'home_reboundsOffensive', 'home_reboundsTotal',
+        'home_foulsPersonal', 'home_turnovers', 'home_plusMinusPoints',
+        'home_numMinutes', 'home_q1Points', 'home_q2Points', 'home_q3Points', 'home_q4Points',
+        'home_benchPoints', 'home_biggestLead', 'home_biggestScoringRun', 'home_leadChanges',
+        'home_pointsFastBreak', 'home_pointsFromTurnovers', 'home_pointsInThePaint',
+        'home_pointsSecondChance', 'home_timesTied', 'home_timeoutsRemaining',
+        'home_seasonWins', 'home_seasonLosses', 'home_coachId',
+        'home_possessions', 'home_offensive_rating', 'home_defensive_rating',
+        'home_net_rating', 'home_point_diff',
+        
+        # CURRENT GAME STATS (away team) - THESE LEAK THE OUTCOME!
+        'gameDateTimeEst_away_merge',
+        'away_teamCity', 'away_teamName', 'away_teamId_merged',
+        'away_opponentTeamCity', 'away_opponentTeamName', 'away_opponentTeamId',
+        'away_home', 'away_win', 'away_teamScore', 'away_opponentScore',
+        'away_assists', 'away_blocks', 'away_steals',
+        'away_fieldGoalsAttempted', 'away_fieldGoalsMade', 'away_fieldGoalsPercentage',
+        'away_threePointersAttempted', 'away_threePointersMade', 'away_threePointersPercentage',
+        'away_freeThrowsAttempted', 'away_freeThrowsMade', 'away_freeThrowsPercentage',
+        'away_reboundsDefensive', 'away_reboundsOffensive', 'away_reboundsTotal',
+        'away_foulsPersonal', 'away_turnovers', 'away_plusMinusPoints',
+        'away_numMinutes', 'away_q1Points', 'away_q2Points', 'away_q3Points', 'away_q4Points',
+        'away_benchPoints', 'away_biggestLead', 'away_biggestScoringRun', 'away_leadChanges',
+        'away_pointsFastBreak', 'away_pointsFromTurnovers', 'away_pointsInThePaint',
+        'away_pointsSecondChance', 'away_timesTied', 'away_timeoutsRemaining',
+        'away_seasonWins', 'away_seasonLosses', 'away_coachId',
+        'away_possessions', 'away_offensive_rating', 'away_defensive_rating',
+        'away_net_rating', 'away_point_diff',
     ]
     
     # Get all columns that are numeric and not in exclude list
+    # This will keep: Stage A1 features + rolling features (_last5, _last10, etc.)
     numeric_features = []
     for col in train_df.columns:
         if col not in exclude_cols and pd.api.types.is_numeric_dtype(train_df[col]):
             numeric_features.append(col)
     
-    print(f"Detected {len(numeric_features)} numeric features")
+    print(f"Detected {len(numeric_features)} numeric features (LEAKAGE-FREE)")
+    
+    # Count rolling features for validation
+    rolling_features = [f for f in numeric_features if '_last' in f]
+    stage_a1_count = len([f for f in numeric_features if not '_last' in f])
+    print(f"  - Stage A1 features: {stage_a1_count}")
+    print(f"  - Rolling features: {len(rolling_features)}")
     
     # Stage A1 core features (for reference/validation)
     stage_a1_features = [

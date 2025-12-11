@@ -1,0 +1,17 @@
+{
+  "archive_timestamp": "20251212_002230",
+  "archive_date": "2025-12-12T00:22:30.598425",
+  "archived_items": [
+    "results.json",
+    "plots/ (9 files)",
+    "models/stage_a1_mlp.keras"
+  ],
+  "original_results": {
+    "timestamp": "2025-12-12T00:22:24.502202",
+    "epochs_trained": 14,
+    "test_accuracy": 0.8457357883453369,
+    "test_auc": 0.8661140203475952,
+    "test_f1": 0.8390350877192982,
+    "optimal_threshold": 0.38
+  }
+}

@@ -552,11 +552,8 @@ def generate_comprehensive_report(
     plot_confidence_vs_accuracy(y_test, y_test_pred_proba,
                                save_path=str(output_path / "confidence_vs_accuracy.png"), show=show)
     
-    # 10. Feature correlations (if feature names provided)
-    if feature_names is not None:
-        print("\n10. Plotting feature correlations...")
-        plot_feature_correlations(X_train, feature_names,
-                                 save_path=str(output_path / "feature_correlations.png"), show=show)
+    # Feature correlations plot removed due to high feature count in Stage B1
+    # (would create unreadable heatmap with 260+ features)
     
     print("\n" + "="*80)
     print(f"VISUALIZATION REPORT COMPLETE")
