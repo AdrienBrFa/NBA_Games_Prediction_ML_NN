@@ -75,8 +75,27 @@ def preprocess_data(
     y_val = val_df['y'].values
     y_test = test_df['y'].values
     
-    # Define numeric features (in order as specified in README)
-    numeric_features = [
+    # Identify all numeric features dynamically (exclude ID columns and target)
+    exclude_cols = [
+        'gameId', 'gameDateTimeEst', 'hometeamId', 'awayteamId', 
+        'hometeamCity', 'hometeamName', 'awayteamCity', 'awayteamName',
+        'homeScore', 'awayScore', 'winner', 'y',
+        'home_teamCity', 'home_teamName', 'away_teamCity', 'away_teamName',
+        'home_opponentTeamCity', 'home_opponentTeamName', 'away_opponentTeamCity', 'away_opponentTeamName',
+        'home_teamId_merged', 'away_teamId_merged', 'home_opponentTeamId', 'away_opponentTeamId',
+        'home_home', 'away_home', 'home_win', 'away_win', 'home_coachId', 'away_coachId'
+    ]
+    
+    # Get all columns that are numeric and not in exclude list
+    numeric_features = []
+    for col in train_df.columns:
+        if col not in exclude_cols and pd.api.types.is_numeric_dtype(train_df[col]):
+            numeric_features.append(col)
+    
+    print(f"Detected {len(numeric_features)} numeric features")
+    
+    # Stage A1 core features (for reference/validation)
+    stage_a1_features = [
         'seasonYear',
         'home_season_games_played', 'home_season_wins', 'home_season_losses', 'home_season_win_pct',
         'away_season_games_played', 'away_season_wins', 'away_season_losses', 'away_season_win_pct',
