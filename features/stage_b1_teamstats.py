@@ -198,6 +198,9 @@ def merge_team_stats_to_games(
     Returns:
         Merged DataFrame with home_* and away_* prefixed features
     """
+    # Keep track of columns we want to preserve from df_games
+    games_cols_to_preserve = df_games.columns.tolist()
+    
     # Merge home team stats
     df_merged = df_games.merge(
         df_team_stats,
@@ -215,7 +218,8 @@ def merge_team_stats_to_games(
     # Rename home team columns with home_ prefix
     rename_dict_home = {}
     for col in team_stat_cols:
-        if col in df_merged.columns and not col.startswith('home_'):
+        # Only rename columns that don't already exist in df_games
+        if col in df_merged.columns and not col.startswith('home_') and col not in games_cols_to_preserve:
             rename_dict_home[col] = f'home_{col}'
     
     # Also handle the teamId column from merge
@@ -236,8 +240,10 @@ def merge_team_stats_to_games(
     # Rename away team columns with away_ prefix
     rename_dict_away = {}
     for col in team_stat_cols:
-        if col in df_merged.columns and not col.startswith(('home_', 'away_')):
+        # Only rename columns that don't already exist in df_games and aren't already home_ prefixed
+        if col in df_merged.columns and not col.startswith(('home_', 'away_')) and col not in games_cols_to_preserve:
             rename_dict_away[col] = f'away_{col}'
+
     
     # Handle the teamId column from second merge
     if 'teamId' in df_merged.columns:
