@@ -1,10 +1,10 @@
 # Repository Structure Documentation
 
-This document explains the structure of the NBA Game Prediction project and how each file/script/notebook fits together to build and run the Stage A1 model.
+This document explains the structure of the NBA Game Prediction project and how each file/script/notebook fits together to build and run the Stage A model.
 
 ## Project Overview
 
-This repository implements Stage A1 of an NBA game prediction system using a neural network. Stage A1 uses only `Games.csv` data with a simple MLP (Multi-Layer Perceptron) model to predict whether the home team will win a game.
+This repository implements Stage A of an NBA game prediction system using a neural network. Stage A uses only `Games.csv` data with a simple MLP (Multi-Layer Perceptron) model to predict whether the home team will win a game.
 
 ## Directory Structure
 
@@ -25,7 +25,7 @@ NBA_Games_Prediction_ML_NN/
 │   └── train_model.py         # Step 4: Define, train, and evaluate model
 │
 ├── models/                     # Saved trained models (created during execution)
-│   └── stage_a1_mlp.keras     # Best MLP model from training
+│   └── stage_a_mlp.keras     # Best MLP model from training
 │
 ├── outputs/                    # Intermediate and final outputs (created during execution)
 │   ├── filtered_games.csv     # Filtered games (Regular Season 1990+)
@@ -138,7 +138,7 @@ Plus 2 categorical features (team IDs) that will be one-hot encoded.
 **Input**: Preprocessed numpy arrays from Step 3
 
 **Outputs**:
-- `models/stage_a1_mlp.keras` (best model)
+- `models/stage_a_mlp.keras` (best model)
 - `outputs/results.json` (metrics and training history)
 
 **What it does**:
@@ -211,12 +211,12 @@ Each script expects the outputs from previous steps to be in the `outputs/` dire
 
 After running the pipeline, you should have:
 
-- **Model file**: `models/stage_a1_mlp.keras` (trained neural network)
+- **Model file**: `models/stage_a_mlp.keras` (trained neural network)
 - **Results file**: `outputs/results.json` (performance metrics)
 - **Preprocessed data**: numpy arrays in `outputs/` directory
 - **Intermediate CSVs**: filtered data and engineered features
 
-Typical performance for Stage A1:
+Typical performance for Stage A:
 - Test Accuracy: ~60-65% (better than random guessing at 50%)
 - AUC: ~0.60-0.65
 - The model captures basic patterns like home court advantage and team strength

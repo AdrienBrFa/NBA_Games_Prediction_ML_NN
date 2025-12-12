@@ -1,15 +1,15 @@
-# Stage B1 Variants Comparison
+# Stage B Variants Comparison
 
-This document compares the performance of different Stage B1 feature configurations.
+This document compares the performance of different Stage B feature configurations.
 
 ## Variant Configurations
 
-### Stage B1 Full (Original)
+### Stage B Full (Original)
 - **Feature Set**: Full (all 17 rolling metrics)
 - **Rolling Reset**: Continuous across seasons (original implementation)
 - **Total Features**: 203 features after preprocessing
-  - 20 Stage A1 historical features
-  - ~177 Stage B1 rolling features
+  - 20 Stage A historical features
+  - ~177 Stage B rolling features
   - 60 one-hot encoded features (teams, seasons, etc.)
 
 **Rolling Metrics (17)**:
@@ -20,12 +20,12 @@ This document compares the performance of different Stage B1 feature configurati
 - Offensive rating, defensive rating, net rating
 - Possessions (pace)
 
-### Stage B1 Intermediate
+### Stage B Intermediate
 - **Feature Set**: Intermediate (10 key rolling metrics)
 - **Rolling Reset**: By season (reset at season boundaries)
 - **Total Features**: 145 features after preprocessing
-  - 20 Stage A1 historical features
-  - ~62 Stage B1 rolling features (10 metrics × 2 windows × 2 splits + deltas)
+  - 20 Stage A historical features
+  - ~62 Stage B rolling features (10 metrics × 2 windows × 2 splits + deltas)
   - 60 one-hot encoded features
 
 **Rolling Metrics (10)**:
@@ -43,7 +43,7 @@ This document compares the performance of different Stage B1 feature configurati
 
 ### Test Set Performance (Optimal Threshold)
 
-| Metric | Stage B1 Full | Stage B1 Intermediate | Difference |
+| Metric | Stage B Full | Stage B Intermediate | Difference |
 |--------|---------------|----------------------|------------|
 | **Test AUC** | 0.6740 | 0.6582 | -0.0158 (-2.3%) |
 | **Test Accuracy** | 0.6300 | 0.6214 | -0.0086 (-1.4%) |
@@ -53,7 +53,7 @@ This document compares the performance of different Stage B1 feature configurati
 
 ### Training Characteristics
 
-| Metric | Stage B1 Full | Stage B1 Intermediate |
+| Metric | Stage B Full | Stage B Intermediate |
 |--------|---------------|----------------------|
 | Training Games | 30,085 | 30,085 |
 | Validation Games | 4,669 | 4,669 |
@@ -105,13 +105,13 @@ These removals had minimal impact (-2.3% AUC), suggesting they provided limited 
 
 ## Recommendations
 
-### Use Stage B1 Full when:
+### Use Stage B Full when:
 ✓ Maximum predictive power is critical (even if marginal)
 ✓ Computational resources are not a constraint
 ✓ You want comprehensive feature coverage
 ✓ Historical continuity across seasons is desired
 
-### Use Stage B1 Intermediate when:
+### Use Stage B Intermediate when:
 ✓ Model interpretability is important (fewer features)
 ✓ Training/inference speed matters (28.6% fewer features)
 ✓ You believe teams reset significantly each season
@@ -119,7 +119,7 @@ These removals had minimal impact (-2.3% AUC), suggesting they provided limited 
 ✓ You need a simpler, more maintainable model
 
 ### For Production:
-**Recommended: Stage B1 Intermediate**
+**Recommended: Stage B Intermediate**
 
 Rationale:
 1. **97.7% of AUC performance with 71.4% of features** - excellent efficiency
@@ -132,7 +132,7 @@ The marginal AUC loss (2.3%) is offset by better F1 score (+2.4%) and significan
 
 ## Computational Comparison
 
-| Aspect | Stage B1 Full | Stage B1 Intermediate | Savings |
+| Aspect | Stage B Full | Stage B Intermediate | Savings |
 |--------|---------------|----------------------|---------|
 | Rolling Features Computed | 34 teams × 17 metrics × 4 windows/splits = 2,312 | 34 teams × 10 metrics × 4 windows/splits = 1,360 | **41.2%** |
 | Delta Features | 16 comparisons | 9 comparisons | **43.8%** |
@@ -142,7 +142,7 @@ The marginal AUC loss (2.3%) is offset by better F1 score (+2.4%) and significan
 
 ## Next Steps
 
-### Stage B1 Lite (Future)
+### Stage B Lite (Future)
 Consider an even more reduced variant:
 - **5-6 core metrics**: net_rtg, pace, fg_pct, 3p_pct, reb_total, ast
 - **Single window**: last 10 games only (remove last 5)
@@ -151,13 +151,13 @@ Consider an even more reduced variant:
 
 ### Ensemble Approach
 Combine both variants:
-- Train Stage B1 Full and Intermediate separately
+- Train Stage B Full and Intermediate separately
 - Ensemble predictions (weighted average or stacking)
 - Potential: Best of both worlds (Full's coverage + Intermediate's robustness)
 
 ## Conclusion
 
-**Stage B1 Intermediate represents an excellent balance between performance and complexity.**
+**Stage B Intermediate represents an excellent balance between performance and complexity.**
 
 With 97.7% of Full's AUC performance, better F1 score, 28.6% fewer features, and seasonal reset aligned with NBA reality, it's the recommended variant for production deployment.
 
@@ -169,5 +169,5 @@ The Full variant remains valuable for:
 ---
 
 **Comparison Date**: December 12, 2025  
-**Stage B1 Full**: Test AUC 0.6740, 203 features, continuous rolling  
-**Stage B1 Intermediate**: Test AUC 0.6582, 145 features, seasonal reset
+**Stage B Full**: Test AUC 0.6740, 203 features, continuous rolling  
+**Stage B Intermediate**: Test AUC 0.6582, 145 features, seasonal reset

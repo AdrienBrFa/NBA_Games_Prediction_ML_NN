@@ -485,21 +485,30 @@ def generate_comprehensive_report(
     test_metrics: Dict,
     feature_names: Optional[List[str]] = None,
     output_dir: str = "outputs/plots",
-    show: bool = False
+    show: bool = False,
+    X_train_home_team: Optional[np.ndarray] = None,
+    X_train_away_team: Optional[np.ndarray] = None,
+    X_val_home_team: Optional[np.ndarray] = None,
+    X_val_away_team: Optional[np.ndarray] = None,
+    X_test_home_team: Optional[np.ndarray] = None,
+    X_test_away_team: Optional[np.ndarray] = None
 ):
     """
     Generate a comprehensive visualization report with all plots.
     
     Args:
         model: Trained Keras model
-        X_train, y_train: Training data
-        X_val, y_val: Validation data
-        X_test, y_test: Test data
+        X_train, y_train: Training data (numeric features for Model 2)
+        X_val, y_val: Validation data (numeric features for Model 2)
+        X_test, y_test: Test data (numeric features for Model 2)
         history: Training history
         train_metrics, val_metrics, test_metrics: Metrics dictionaries
         feature_names: List of feature names
         output_dir: Directory to save all plots
         show: Whether to display plots
+        X_train_home_team, X_train_away_team: Team IDs for Model 2 (optional)
+        X_val_home_team, X_val_away_team: Team IDs for Model 2 (optional)
+        X_test_home_team, X_test_away_team: Team IDs for Model 2 (optional)
     """
     print("\n" + "="*80)
     print("GENERATING COMPREHENSIVE VISUALIZATION REPORT")
@@ -514,7 +523,14 @@ def generate_comprehensive_report(
     
     # 2. Get predictions for test set
     print("\n2. Generating predictions for visualization...")
-    y_test_pred_proba = model.predict(X_test, verbose=0).flatten()
+    # Check if Model 2 (has team inputs)
+    if X_test_home_team is not None and X_test_away_team is not None:
+        # Ensure team inputs are 2D (batch, 1)
+        home_ids = X_test_home_team if X_test_home_team.ndim == 2 else X_test_home_team.reshape(-1, 1)
+        away_ids = X_test_away_team if X_test_away_team.ndim == 2 else X_test_away_team.reshape(-1, 1)
+        y_test_pred_proba = model.predict([home_ids, away_ids, X_test], verbose=0).flatten()
+    else:
+        y_test_pred_proba = model.predict(X_test, verbose=0).flatten()
     y_test_pred = (y_test_pred_proba >= 0.5).astype(int)
     
     # 3. Confusion matrix

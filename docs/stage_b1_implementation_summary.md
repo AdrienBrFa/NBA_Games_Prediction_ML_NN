@@ -1,43 +1,43 @@
-# Stage B1 Implementation Summary
+# Stage B Implementation Summary
 
 ## ✅ Implementation Complete
 
-Stage B1 has been successfully implemented with team statistics integration.
+Stage B has been successfully implemented with team statistics integration.
 
 ### Deliverables
 
-1. **Feature Engineering Module** - `features/stage_b1_teamstats.py`
+1. **Feature Engineering Module** - `features/stage_b_teamstats.py`
    - Rolling window features (5, 10 games)
    - Home/away split features
    - Delta features (home - away)
    - No data leakage (strict datetime ordering)
    - 470 lines of code
 
-2. **Pipeline Integration** - `run_stage_b1.py`
-   - Loads Stage A1 historical features
-   - Adds Stage B1 team statistics features
+2. **Pipeline Integration** - `run_stage_b.py`
+   - Loads Stage A historical features
+   - Adds Stage B team statistics features
    - Maintains identical model architecture
-   - Archives to `archives/stage_b1/`
+   - Archives to `archives/stage_b/`
 
-3. **Validation Tests** - `test_stage_b1.py`
+3. **Validation Tests** - `test_stage_b.py`
    - ✅ No data leakage verification
    - ✅ Merge correctness (both teams)
    - ✅ Feature count validation
    - ✅ Missing value handling
 
 4. **Documentation**
-   - `docs/stage_b1_design.md` - Complete feature specifications
-   - `README.md` - Updated with Stage B1 section
+   - `docs/stage_b_design.md` - Complete feature specifications
+   - `README.md` - Updated with Stage B section
 
 ### Feature Summary
 
 | Category | Count | Description |
 |----------|-------|-------------|
-| Stage A1 | 20 | Historical features (win pct, rest days, etc.) |
-| Stage B1 | 260 | Team statistics features |
+| Stage A | 20 | Historical features (win pct, rest days, etc.) |
+| Stage B | 260 | Team statistics features |
 | **Total** | **280** | Combined feature set |
 
-#### Stage B1 Features Breakdown:
+#### Stage B Features Breakdown:
 - **Rolling features** (home + away): ~144 features
   - Scoring: points, point differential
   - Shooting: FG%, 3P%, FT%
@@ -68,8 +68,8 @@ Stage B1 has been successfully implemented with team statistics integration.
   - Dropped 3 games with missing key features
 
 ✅ TEST 3: Feature Count
-  - Stage A1 features: 20
-  - Stage B1 features: 260
+  - Stage A features: 20
+  - Stage B features: 260
   - Total features: 280
   - ✅ Feature count in expected range (50-70+ with deltas)
 
@@ -81,12 +81,12 @@ Stage B1 has been successfully implemented with team statistics integration.
 
 ### Performance Expectations
 
-**Stage A1 Baseline:**
+**Stage A Baseline:**
 - Test Accuracy: 58.55%
 - Test AUC: 0.598
 - Test F1: 0.710
 
-**Stage B1 Target:**
+**Stage B Target:**
 - Test AUC: 0.62–0.65 (+2.2–5.2 points)
 - Test Accuracy: 60–62% (+1.5–3.5 points)
 
@@ -112,19 +112,19 @@ df['gameDateTimeEst'] = pd.to_datetime(df['gameDateTimeEst'], utc=True, format='
 df['gameDateTimeEst'] = df['gameDateTimeEst'].dt.tz_localize(None)
 ```
 
-### Running Stage B1
+### Running Stage B
 
 ```bash
-# Run full Stage B1 pipeline
-python run_stage_b1.py
+# Run full Stage B pipeline
+python run_stage_b.py
 
 # Validate implementation
-python test_stage_b1.py
+python test_stage_b.py
 
-# Compare with Stage A1
+# Compare with Stage A
 python -c "from scripts.archive_manager import list_archives, compare_archives; \
-           a1 = list_archives('archives/stage_a1')[-1]['path']; \
-           b1 = list_archives('archives/stage_b1')[-1]['path']; \
+           a1 = list_archives('archives/stage_a')[-1]['path']; \
+           b1 = list_archives('archives/stage_b')[-1]['path']; \
            compare_archives(a1, b1)"
 ```
 
@@ -134,36 +134,36 @@ python -c "from scripts.archive_manager import list_archives, compare_archives; 
 NBA_Games_Predictions_ML_NN/
 ├── features/
 │   ├── __init__.py
-│   └── stage_b1_teamstats.py          # ✅ NEW
+│   └── stage_b_teamstats.py          # ✅ NEW
 ├── docs/
-│   ├── stage_a1_analysis.md
-│   ├── stage_b1_design.md             # ✅ NEW
+│   ├── stage_a_analysis.md
+│   ├── stage_b_design.md             # ✅ NEW
 │   └── stage_separation.md
 ├── outputs/
-│   ├── stage_a1/                      # Stage A1 results
-│   └── stage_b1/                      # ✅ Stage B1 results
+│   ├── stage_a/                      # Stage A results
+│   └── stage_b/                      # ✅ Stage B results
 ├── archives/
-│   ├── stage_a1/                      # Stage A1 archives
-│   └── stage_b1/                      # ✅ Stage B1 archives
-├── run_stage_a1.py                    # Stage A1 pipeline (frozen)
-├── run_stage_b1.py                    # ✅ Stage B1 pipeline (updated)
-└── test_stage_b1.py                   # ✅ NEW
+│   ├── stage_a/                      # Stage A archives
+│   └── stage_b/                      # ✅ Stage B archives
+├── run_stage_a.py                    # Stage A pipeline (frozen)
+├── run_stage_b.py                    # ✅ Stage B pipeline (updated)
+└── test_stage_b.py                   # ✅ NEW
 ```
 
 ### Next Steps
 
-1. **Execute Stage B1 pipeline:**
+1. **Execute Stage B pipeline:**
    ```bash
-   python run_stage_b1.py
+   python run_stage_b.py
    ```
 
 2. **Compare results:**
-   - Check `outputs/stage_b1/results.json`
-   - Review plots in `outputs/stage_b1/plots/`
-   - Compare with Stage A1 using archive manager
+   - Check `outputs/stage_b/results.json`
+   - Review plots in `outputs/stage_b/plots/`
+   - Compare with Stage A using archive manager
 
 3. **Document results:**
-   - Create `docs/stage_b1_analysis.md` similar to Stage A1
+   - Create `docs/stage_b_analysis.md` similar to Stage A
    - Compare performance metrics
    - Analyze feature importance if using tree-based models later
 
@@ -171,7 +171,7 @@ NBA_Games_Predictions_ML_NN/
 
 ✅ **NO DATA LEAKAGE**: Rolling features computed only from past games  
 ✅ **Time-based split**: Train 1990–2015, Val 2016–2019, Test 2020–2023  
-✅ **Stage A1 unchanged**: No modifications to Stage A1 code  
+✅ **Stage A unchanged**: No modifications to Stage A code  
 ✅ **Compatible outputs**: Works with existing archiving and analysis scripts  
 ✅ **Validation tests**: All tests pass successfully  
 ✅ **Documentation**: Complete design document and README updates  

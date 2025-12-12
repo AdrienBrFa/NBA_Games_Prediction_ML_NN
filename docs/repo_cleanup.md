@@ -8,18 +8,18 @@
 ### 1. `run_pipeline.py` ❌ DEPRECATED
 **Reason**: Superseded by stage-specific scripts  
 **Replacement**: 
-- `run_stage_a1.py` for Stage A1
-- `run_stage_b1_intermediate.py` or `run_stage_b1_full.py` for Stage B1
+- `run_stage_a.py` for Stage A
+- `run_stage_b_intermediate.py` or `run_stage_b_full.py` for Stage B
 
-This file was a legacy entry point that redirected to Stage A1. All documentation now points to stage-specific scripts directly.
+This file was a legacy entry point that redirected to Stage A. All documentation now points to stage-specific scripts directly.
 
-### 2. `run_stage_b1.py` ❌ DEPRECATED
+### 2. `run_stage_b.py` ❌ DEPRECATED
 **Reason**: Superseded by variant-specific scripts  
 **Replacement**:
-- `run_stage_b1_intermediate.py` (recommended - 145 features, seasonal reset)
-- `run_stage_b1_full.py` (reference benchmark - 203 features)
+- `run_stage_b_intermediate.py` (recommended - 145 features, seasonal reset)
+- `run_stage_b_full.py` (reference benchmark - 203 features)
 
-The original `run_stage_b1.py` was the first implementation before we split into intermediate and full variants. The new scripts provide:
+The original `run_stage_b.py` was the first implementation before we split into intermediate and full variants. The new scripts provide:
 - Better configuration management
 - Seasonal reset option
 - Clear feature set selection
@@ -45,7 +45,7 @@ This was a quick validation script to ensure stage separation was working. Now t
 
 The imports and configurations are proven to work.
 
-### 5. `test_stage_b1.py` ✅ KEEP (with note)
+### 5. `test_stage_b.py` ✅ KEEP (with note)
 **Status**: **NOT REMOVED** - contains valuable validation tests  
 **Purpose**: Data leakage validation and feature count verification  
 **Note**: This file is kept because it provides:
@@ -60,7 +60,7 @@ However, it's not part of the regular pipeline - it's a validation tool that can
 **Purpose**: Compare performance across runs and archives  
 **Note**: While not essential (archive_manager provides similar functionality), it offers a simpler interface for quick result checks.
 
-### 7. `audit_stage_b1_leakage.py` ✅ KEEP (as reference)
+### 7. `audit_stage_b_leakage.py` ✅ KEEP (as reference)
 **Status**: **NOT REMOVED** - important historical documentation  
 **Purpose**: Comprehensive leakage audit that identified 101 problematic columns  
 **Note**: This script was critical in discovering and fixing the data leakage issue. Kept as:
@@ -68,13 +68,13 @@ However, it's not part of the regular pipeline - it's a validation tool that can
 - Documentation of the audit methodology
 - Potential template for future data validation
 
-The audit results are documented in `docs/stage_b1_leakage_audit.md`.
+The audit results are documented in `docs/stage_b_leakage_audit.md`.
 
 ### 8. `IMPROVEMENTS_SUMMARY.md` ❌ DEPRECATED
 **Reason**: Content superseded by comprehensive documentation  
 **Replacement**:
-- `docs/stage_a1_analysis.md` - detailed A1 analysis
-- `docs/stage_b1_variants_comparison.md` - B1 variant comparison
+- `docs/stage_a_analysis.md` - detailed A1 analysis
+- `docs/stage_b_variants_comparison.md` - B1 variant comparison
 - Main `README.md` - overview of all improvements
 
 This file was a temporary summary created during early development. All information is now properly documented in the docs/ folder.
@@ -88,9 +88,9 @@ Having both README.md and QUICKSTART.md creates confusion about which is the aut
 ## Files NOT Removed (Keeping)
 
 ### Core Pipeline Scripts
-✅ `run_stage_a1.py` - Stage A1 reference pipeline  
-✅ `run_stage_b1_intermediate.py` - B1 intermediate variant (recommended)  
-✅ `run_stage_b1_full.py` - B1 full variant (benchmark)
+✅ `run_stage_a.py` - Stage A reference pipeline  
+✅ `run_stage_b_intermediate.py` - B1 intermediate variant (recommended)  
+✅ `run_stage_b_full.py` - B1 full variant (benchmark)
 
 ### Scripts Package
 ✅ `scripts/` - all modules used by pipelines
@@ -104,14 +104,14 @@ Having both README.md and QUICKSTART.md creates confusion about which is the aut
 
 ### Features Package
 ✅ `features/` - all feature engineering modules
-- `stage_b1_teamstats.py` - original implementation
-- `stage_b1_enhanced.py` - enhanced with seasonal reset
-- `stage_b1_config.py` - configuration for variants
+- `stage_b_teamstats.py` - original implementation
+- `stage_b_enhanced.py` - enhanced with seasonal reset
+- `stage_b_config.py` - configuration for variants
 
 ### Validation & Analysis Tools
-✅ `test_stage_b1.py` - data leakage validation  
+✅ `test_stage_b.py` - data leakage validation  
 ✅ `analyze_results.py` - results comparison utility  
-✅ `audit_stage_b1_leakage.py` - historical audit reference
+✅ `audit_stage_b_leakage.py` - historical audit reference
 
 ### Documentation
 ✅ All files in `docs/` folder
@@ -128,7 +128,7 @@ Having both README.md and QUICKSTART.md creates confusion about which is the aut
 
 **Removed**: 4 files
 - `run_pipeline.py`
-- `run_stage_b1.py`
+- `run_stage_b.py`
 - `test_improvements.py`
 - `test_stages.py`
 - `IMPROVEMENTS_SUMMARY.md`
@@ -142,17 +142,17 @@ Having both README.md and QUICKSTART.md creates confusion about which is the aut
 
 After cleanup, all pipelines must still work:
 ```bash
-# Test Stage A1
-python run_stage_a1.py
+# Test Stage A
+python run_stage_a.py
 
-# Test Stage B1 Intermediate
-python run_stage_b1_intermediate.py
+# Test Stage B Intermediate
+python run_stage_b_intermediate.py
 
-# Test Stage B1 Full
-python run_stage_b1_full.py
+# Test Stage B Full
+python run_stage_b_full.py
 
 # Optional validation
-python test_stage_b1.py
+python test_stage_b.py
 ```
 
 All imports remain functional, all archives are preserved, and reproducibility is maintained.

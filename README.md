@@ -84,7 +84,7 @@ Detailed team performance statistics for each game.
 - Advanced: offensive rating, defensive rating, net rating, possessions (pace)
 - Each game has 2 rows: one for home team, one for away team
 
-**Usage**: Used in Stage B1 to compute rolling averages and team performance trends.
+**Usage**: Used in Stage B to compute rolling averages and team performance trends.
 
 #### `PlayerStatistics.csv` ⚠️ NOT USED YET
 Individual player statistics (points, assists, etc.).
@@ -120,9 +120,9 @@ The project is organized along **two axes**:
 
 Each combination of (Data Stage × Model) is a distinct experiment:
 
-- **Stage A1**: Games only × Simple MLP ✅ **COMPLETE**
-- **Stage B1 Intermediate**: Games + Team Stats (10 metrics, seasonal reset) × Simple MLP ✅ **COMPLETE**
-- **Stage B1 Full**: Games + Team Stats (17 metrics, continuous) × Simple MLP ✅ **COMPLETE**
+- **Stage A**: Games only × Simple MLP ✅ **COMPLETE**
+- **Stage B Intermediate**: Games + Team Stats (10 metrics, seasonal reset) × Simple MLP ✅ **COMPLETE**
+- **Stage B Full**: Games + Team Stats (17 metrics, continuous) × Simple MLP ✅ **COMPLETE**
 
 ---
 
@@ -140,7 +140,7 @@ All models use **optimal threshold** tuned on validation set (F1 score maximizat
 
 ### Key Insights
 
-#### 1. Stage B1 vs Stage A1 (+6-7.6% AUC)
+#### 1. Stage B vs Stage A (+6-7.6% AUC)
 
 **Why B1 improves over A1:**
 - **Richer features**: Offensive/defensive ratings capture team quality better than win-loss record
@@ -192,14 +192,14 @@ pip install -r requirements.txt
 ### Run Pipelines
 
 ```bash
-# Stage A1 - Baseline (Games only)
-python run_stage_a1.py
+# Stage A - Baseline (Games only)
+python run_stage_a.py
 
-# Stage B1 Intermediate - Recommended (Team stats, 10 metrics, seasonal reset)
-python run_stage_b1_intermediate.py
+# Stage B Intermediate - Recommended (Team stats, 10 metrics, seasonal reset)
+python run_stage_b_intermediate.py
 
-# Stage B1 Full - Benchmark (Team stats, 17 metrics, continuous)
-python run_stage_b1_full.py
+# Stage B Full - Benchmark (Team stats, 17 metrics, continuous)
+python run_stage_b_full.py
 ```
 
 ### Threshold Optimization Strategies
@@ -208,13 +208,13 @@ All pipelines support multiple threshold optimization strategies:
 
 ```bash
 # Default: F1-optimized threshold (balances precision and recall)
-python run_stage_a1.py
+python run_stage_a.py
 
 # Accuracy-optimized threshold (maximizes overall correctness)
-python run_stage_a1.py --threshold_metric accuracy
+python run_stage_a.py --threshold_metric accuracy
 
 # Balanced accuracy-optimized threshold (handles class imbalance)
-python run_stage_a1.py --threshold_metric balanced_accuracy
+python run_stage_a.py --threshold_metric balanced_accuracy
 
 # Compare different strategies
 python compare_thresholds.py
@@ -238,13 +238,123 @@ Each pipeline:
 - Models: `models/stage_xxx/mlp.keras`
 - Results: `outputs/stage_xxx/results.json`
 - Plots: `outputs/stage_xxx/plots/`
+- Archives: `archives/stage_xxx/run_<timestamp>_threshold-<metric>/`
+
+---
+
+## 🧠 Model 2: Enhanced MLP with Team Embeddings
+
+### Overview
+
+**Model 2** is an enhanced neural network architecture that learns team representations through **embeddings**, combined with an improved MLP. This upgrade maintains full compatibility with all existing stages (A1, B1-intermediate, B1-full) while adding interpretability through embedding visualization.
+
+### What Are Team Embeddings?
+
+Instead of treating teams as independent binary features (one-hot encoding), Model 2 learns dense, low-dimensional **vector representations** for each team:
+
+- **Model 1**: 30 teams → 60 binary features (30 home + 30 away)
+- **Model 2**: 30 teams → 48 embedding features (16D × 3 combinations)
+
+**Benefits**:
+1. **Dimensionality reduction**: 60 → 48 features
+2. **Learned relationships**: Similar teams cluster in embedding space
+3. **Better generalization**: Model understands team similarity
+4. **Interpretable**: Visualizations reveal team characteristics
+
+### Architecture Comparison
+
+| Component | Model 1 | Model 2 |
+|-----------|---------|---------|
+| **Team Encoding** | One-hot (60 features) | Learned embeddings (48 features) |
+| **Hidden Layers** | 64-32 | 128-64-32 |
+| **Normalization** | None | BatchNorm after each layer |
+| **Regularization** | Dropout only | Dropout + L2 + embedding regularization |
+| **Parameters** | ~5,000 | ~15,000 |
+
+### Usage
+
+**Model 2A** (Stage A + embeddings):
+```bash
+python run_stage_a.py --model_version 2
+```
+
+**Model 2B-intermediate** (recommended):
+```bash
+python run_stage_b_intermediate.py --model_version 2
+```
+
+**Model 2B-full**:
+```bash
+python run_stage_b_full.py --model_version 2
+```
+
+**Configure embedding dimension**:
+```bash
+python run_stage_a.py --model_version 2 --embedding_dim 16
+```
+
+### Team Embedding Visualization
+
+After training Model 2, the pipeline automatically generates **2D visualizations** of learned team embeddings:
+
+**What you get**:
+1. **PNG plot** (`team_embeddings_2d.png`): Scatter plot with team labels
+2. **CSV data** (`team_embeddings_raw.csv`): Full embedding vectors + 2D coordinates
+
+**How to interpret**:
+- **Clusters**: Teams with similar playing styles/strength group together
+- **Distance**: Closer teams have more similar learned representations
+- **Outliers**: Teams with unique characteristics stand apart
+- **Patterns**: Strong vs weak teams, defensive vs offensive styles
+
+**Example patterns you might see**:
+- Elite teams (GSW, LAL, BOS) clustering together
+- Defensive-focused teams near each other
+- Rebuilding teams in a separate cluster
+- High-pace vs slow-pace team separation
+
+**Important notes**:
+- Embeddings are learned from **win patterns**, not stats
+- 2D is a simplified view (original embeddings are 16-dimensional)
+- Different runs may have different orientations (PCA rotation)
+- Patterns emerge organically from training data
+
+**Location**:
+- Visualization: `outputs/stage_xxx/team_embeddings_2d.png`
+- Raw data: `outputs/stage_xxx/team_embeddings_raw.csv`
+- Archived with each run in `archives/stage_xxx/run_<timestamp>_model2/`
+
+### Why Use Model 2?
+
+**Use Model 2 when**:
+- You want to understand team relationships
+- You need better generalization on rare matchups
+- You want more model capacity
+- Interpretability is important
+
+**Stick with Model 1 when**:
+- You need a simple baseline
+- Training time is critical
+- You're comparing with other simple models
+
+### Expected Performance
+
+| Variant | Expected Test AUC | Improvement over Model 1 |
+|---------|-------------------|--------------------------|
+| 2A (A1 + embeddings) | 0.69-0.71 | +9-12% |
+| 2B-intermediate | 0.68-0.70 | +2-4% |
+| 2B-full | 0.70-0.72 | +2-4% |
+
+**Note**: Actual results will be updated after training and evaluation.
+
+---
 - Archives: `archives/stage_xxx/run_YYYYMMDD_HHMMSS_threshold-{metric}/`
 
 ---
 
 ## 📖 Detailed Usage
 
-### Stage A1 - Historical Features Only
+### Stage A - Historical Features Only
 
 **What it does**:
 - Computes team historical performance (win %, win streak, rest days)
@@ -261,14 +371,14 @@ Each pipeline:
 
 **Run**:
 ```bash
-python run_stage_a1.py
+python run_stage_a.py
 ```
 
-See [Stage A1 Analysis](docs/stage_a1_analysis.md) for detailed results and improvement history.
+See [Stage A Analysis](docs/stage_a_analysis.md) for detailed results and improvement history.
 
 ---
 
-### Stage B1 Intermediate - Team Statistics (Recommended)
+### Stage B Intermediate - Team Statistics (Recommended)
 
 **What it adds to A1**:
 - **10 key team metrics** from TeamStatistics.csv:
@@ -292,12 +402,12 @@ See [Stage A1 Analysis](docs/stage_a1_analysis.md) for detailed results and impr
 
 **Run**:
 ```bash
-python run_stage_b1_intermediate.py
+python run_stage_b_intermediate.py
 ```
 
 ---
 
-### Stage B1 Full - Comprehensive Team Statistics (Benchmark)
+### Stage B Full - Comprehensive Team Statistics (Benchmark)
 
 **What it adds to Intermediate**:
 - **7 additional metrics**: points scored/allowed, point differential, steals, blocks, off/def rebounds
@@ -318,10 +428,10 @@ python run_stage_b1_intermediate.py
 
 **Run**:
 ```bash
-python run_stage_b1_full.py
+python run_stage_b_full.py
 ```
 
-See [Stage B1 Variants Comparison](docs/stage_b1_variants_comparison.md) for detailed analysis.
+See [Stage B Variants Comparison](docs/stage_b_variants_comparison.md) for detailed analysis.
 
 ---
 
@@ -331,7 +441,7 @@ See [Stage B1 Variants Comparison](docs/stage_b1_variants_comparison.md) for det
 
 **Validation**:
 ```bash
-python test_stage_b1.py
+python test_stage_b.py
 ```
 
 This script:
@@ -340,7 +450,7 @@ This script:
 - Verifies no future data is used
 - Checks merge correctness
 
-See [Stage B1 Leakage Audit](docs/stage_b1_leakage_audit.md) for the comprehensive audit that identified and fixed 101 leakage columns.
+See [Stage B Leakage Audit](docs/stage_b_leakage_audit.md) for the comprehensive audit that identified and fixed 101 leakage columns.
 
 ---
 
@@ -358,12 +468,12 @@ Every pipeline run is **automatically archived** with:
 **Archive structure**:
 ```
 archives/
-├── stage_a1/
+├── stage_a/
 │   ├── run_20251209_193450/  # Latest successful run
 │   └── run_20251209_191510/  # Previous run (baseline)
-├── stage_b1_intermediate/
+├── stage_b_intermediate/
 │   └── run_20251212_011004/
-└── stage_b1_full/
+└── stage_b_full/
     └── run_20251212_XXXXXX/
 ```
 
@@ -382,11 +492,11 @@ Shows:
 **Manual comparison**:
 ```bash
 # View archived results
-cat archives/stage_a1/run_20251209_193450/results.json
+cat archives/stage_a/run_20251209_193450/results.json
 
 # Compare two runs
-diff archives/stage_a1/run_20251209_191510/results.json \
-     archives/stage_a1/run_20251209_193450/results.json
+diff archives/stage_a/run_20251209_191510/results.json \
+     archives/stage_a/run_20251209_193450/results.json
 ```
 
 ### Archive Manager API
@@ -395,12 +505,12 @@ diff archives/stage_a1/run_20251209_191510/results.json \
 from scripts.archive_manager import list_archives, compare_archives
 
 # List all archives for a stage
-archives = list_archives("archives/stage_a1")
+archives = list_archives("archives/stage_a")
 
 # Compare two specific runs
 comparison = compare_archives(
-    "archives/stage_a1/run_20251209_191510",
-    "archives/stage_a1/run_20251209_193450"
+    "archives/stage_a/run_20251209_191510",
+    "archives/stage_a/run_20251209_193450"
 )
 ```
 
@@ -420,52 +530,52 @@ NBA_Games_Predictions_ML_NN/
 │
 ├── scripts/                       # Core pipeline modules
 │   ├── load_data.py              # Data loading and filtering
-│   ├── feature_engineering.py    # Stage A1 features
+│   ├── feature_engineering.py    # Stage A features
 │   ├── preprocessing.py          # One-hot encoding, scaling, splitting
 │   ├── train_model.py            # MLP training, threshold optimization
 │   ├── visualize.py              # Comprehensive visualization suite
 │   ├── archive_manager.py        # Result archiving and comparison
 │   └── utils.py                  # Helper functions
 │
-├── features/                      # Stage B1 feature engineering
-│   ├── stage_b1_teamstats.py     # Original full implementation
-│   ├── stage_b1_enhanced.py      # Enhanced with seasonal reset
-│   └── stage_b1_config.py        # Intermediate variant configuration
+├── features/                      # Stage B feature engineering
+│   ├── stage_b_teamstats.py     # Original full implementation
+│   ├── stage_b_enhanced.py      # Enhanced with seasonal reset
+│   └── stage_b_config.py        # Intermediate variant configuration
 │
-├── run_stage_a1.py               # Stage A1 pipeline
-├── run_stage_b1_intermediate.py  # Stage B1 Intermediate pipeline
-├── run_stage_b1_full.py          # Stage B1 Full pipeline
+├── run_stage_a.py               # Stage A pipeline
+├── run_stage_b_intermediate.py  # Stage B Intermediate pipeline
+├── run_stage_b_full.py          # Stage B Full pipeline
 │
 ├── outputs/                       # Current run outputs (not version controlled)
-│   ├── stage_a1/
-│   ├── stage_b1_intermediate/
-│   └── stage_b1_full/
+│   ├── stage_a/
+│   ├── stage_b_intermediate/
+│   └── stage_b_full/
 │
 ├── models/                        # Trained models (not version controlled)
-│   ├── stage_a1/
-│   ├── stage_b1_intermediate/
-│   └── stage_b1_full/
+│   ├── stage_a/
+│   ├── stage_b_intermediate/
+│   └── stage_b_full/
 │
 ├── archives/                      # Historical runs (not version controlled)
-│   ├── stage_a1/
+│   ├── stage_a/
 │   │   ├── run_20251209_193450/
 │   │   └── run_20251209_191510/
-│   ├── stage_b1_intermediate/
+│   ├── stage_b_intermediate/
 │   │   └── run_20251212_011004/
-│   └── stage_b1_full/
+│   └── stage_b_full/
 │
 ├── docs/                          # Comprehensive documentation
-│   ├── stage_a1_analysis.md      # A1 results and improvements
-│   ├── stage_b1_design.md        # B1 feature specifications
-│   ├── stage_b1_variants_comparison.md  # Intermediate vs Full
-│   ├── stage_b1_leakage_audit.md # Data leakage audit and fix
+│   ├── stage_a_analysis.md      # A1 results and improvements
+│   ├── stage_b_design.md        # B1 feature specifications
+│   ├── stage_b_variants_comparison.md  # Intermediate vs Full
+│   ├── stage_b_leakage_audit.md # Data leakage audit and fix
 │   ├── archiving_system.md       # Archive system documentation
 │   ├── repo_cleanup.md           # Repository cleanup log
 │   └── repo_structure.md         # Detailed structure explanation
 │
-├── test_stage_b1.py              # Data leakage validation tests
+├── test_stage_b.py              # Data leakage validation tests
 ├── analyze_results.py            # Results comparison utility
-├── audit_stage_b1_leakage.py     # Historical audit reference
+├── audit_stage_b_leakage.py     # Historical audit reference
 │
 ├── requirements.txt              # Python dependencies
 ├── .gitignore                    # Git ignore patterns
@@ -478,9 +588,9 @@ NBA_Games_Predictions_ML_NN/
 
 ### ✅ Completed
 
-- **Stage A1**: Games-only baseline (Test AUC 0.598)
-- **Stage B1 Intermediate**: Team stats with 10 metrics, seasonal reset (Test AUC 0.658)
-- **Stage B1 Full**: Team stats with 17 metrics, continuous rolling (Test AUC 0.674)
+- **Stage A**: Games-only baseline (Test AUC 0.598)
+- **Stage B Intermediate**: Team stats with 10 metrics, seasonal reset (Test AUC 0.658)
+- **Stage B Full**: Team stats with 17 metrics, continuous rolling (Test AUC 0.674)
 - **Data Leakage Audit**: Comprehensive validation and fix (101 columns identified)
 - **Archive System**: Reproducible experiment tracking
 - **Documentation**: Comprehensive guides for all stages
@@ -549,10 +659,10 @@ See [Model 2 Plan](docs/model_2_plan.md) for detailed design.
 
 ### Main Documents
 
-- **[Stage A1 Analysis](docs/stage_a1_analysis.md)** - Detailed A1 results, improvements, and comparison
-- **[Stage B1 Design](docs/stage_b1_design.md)** - Complete B1 feature specifications
-- **[Stage B1 Variants Comparison](docs/stage_b1_variants_comparison.md)** - Intermediate vs Full analysis
-- **[Stage B1 Leakage Audit](docs/stage_b1_leakage_audit.md)** - Data leakage discovery and fix
+- **[Stage A Analysis](docs/stage_a_analysis.md)** - Detailed A1 results, improvements, and comparison
+- **[Stage B Design](docs/stage_b_design.md)** - Complete B1 feature specifications
+- **[Stage B Variants Comparison](docs/stage_b_variants_comparison.md)** - Intermediate vs Full analysis
+- **[Stage B Leakage Audit](docs/stage_b_leakage_audit.md)** - Data leakage discovery and fix
 - **[Threshold Optimization Guide](docs/threshold_optimization.md)** - Multi-metric threshold selection
 - **[Threshold Comparison](docs/threshold_comparison.md)** - Auto-generated results comparison
 - **[Archiving System](docs/archiving_system.md)** - How to use the archive system
@@ -562,10 +672,10 @@ See [Model 2 Plan](docs/model_2_plan.md) for detailed design.
 
 ### Quick References
 
-- **Run A1**: `python run_stage_a1.py`
-- **Run B1 Intermediate**: `python run_stage_b1_intermediate.py`
-- **Run B1 Full**: `python run_stage_b1_full.py`
-- **Validate B1**: `python test_stage_b1.py`
+- **Run A1**: `python run_stage_a.py`
+- **Run B1 Intermediate**: `python run_stage_b_intermediate.py`
+- **Run B1 Full**: `python run_stage_b_full.py`
+- **Validate B1**: `python test_stage_b.py`
 - **Compare Results**: `python analyze_results.py`
 - **Compare Thresholds**: `python compare_thresholds.py`
 
@@ -605,5 +715,5 @@ For questions or discussions, please open an issue on GitHub.
 ---
 
 **Last Updated**: December 12, 2025  
-**Current Stage**: Stage B1 Complete (Intermediate & Full)  
+**Current Stage**: Stage B Complete (Intermediate & Full)  
 **Next Milestone**: Model 2 Architecture Design

@@ -4,8 +4,8 @@
 
 The project is now organized into **separate stages** to facilitate experimentation and comparison:
 
-- **Stage A1**: Historical features only (Games.csv)
-- **Stage B1**: Historical + team statistics (Games.csv + TeamStatistics.csv)
+- **Stage A**: Historical features only (Games.csv)
+- **Stage B**: Historical + team statistics (Games.csv + TeamStatistics.csv)
 - **Stage C1+**: Player-level features (future)
 
 Each stage has its own:
@@ -24,22 +24,22 @@ This ensures **no cross-contamination** between experiments and allows for **cle
 
 | File | Purpose | Status |
 |------|---------|--------|
-| `run_stage_a1.py` | Stage A1 pipeline (historical features only) | ✅ Complete |
-| `run_stage_b1.py` | Stage B1 pipeline (+ team statistics) | 🔄 Structure ready |
-| `run_pipeline.py` | **DEPRECATED** - Redirects to Stage A1 | ⚠️ Backwards compatibility |
+| `run_stage_a.py` | Stage A pipeline (historical features only) | ✅ Complete |
+| `run_stage_b.py` | Stage B pipeline (+ team statistics) | 🔄 Structure ready |
+| `run_pipeline.py` | **DEPRECATED** - Redirects to Stage A | ⚠️ Backwards compatibility |
 
 ### Output Organization
 
 ```
 outputs/
-├── stage_a1/                    # Stage A1 outputs
+├── stage_a/                    # Stage A outputs
 │   ├── results.json
 │   ├── filtered_games.csv
 │   ├── features_engineered.csv
 │   ├── plots/
 │   ├── X_train.npy, y_train.npy, etc.
 │   └── preprocessing_objects.pkl
-└── stage_b1/                    # Stage B1 outputs
+└── stage_b/                    # Stage B outputs
     ├── results.json
     ├── filtered_games.csv
     ├── features_engineered.csv
@@ -51,31 +51,31 @@ outputs/
 
 ```
 models/
-├── stage_a1/
-│   └── mlp.keras               # Stage A1 trained model
-└── stage_b1/
-    └── mlp.keras               # Stage B1 trained model
+├── stage_a/
+│   └── mlp.keras               # Stage A trained model
+└── stage_b/
+    └── mlp.keras               # Stage B trained model
 ```
 
 ### Archive Organization
 
 ```
 archives/
-├── stage_a1/
-│   ├── run_20251209_191510/    # First Stage A1 run (baseline)
-│   └── run_20251209_193450/    # Second Stage A1 run (improved)
-└── stage_b1/
-    └── run_YYYYMMDD_HHMMSS/    # Future Stage B1 runs
+├── stage_a/
+│   ├── run_20251209_191510/    # First Stage A run (baseline)
+│   └── run_20251209_193450/    # Second Stage A run (improved)
+└── stage_b/
+    └── run_YYYYMMDD_HHMMSS/    # Future Stage B runs
 ```
 
 ---
 
 ## Usage
 
-### Running Stage A1
+### Running Stage A
 
 ```bash
-python run_stage_a1.py
+python run_stage_a.py
 ```
 
 **What happens**:
@@ -84,14 +84,14 @@ python run_stage_a1.py
 3. Trains MLP with regularization
 4. Optimizes threshold
 5. Generates visualizations
-6. Saves to `outputs/stage_a1/`
-7. Saves model to `models/stage_a1/mlp.keras`
-8. **Archives to `archives/stage_a1/run_YYYYMMDD_HHMMSS/`**
+6. Saves to `outputs/stage_a/`
+7. Saves model to `models/stage_a/mlp.keras`
+8. **Archives to `archives/stage_a/run_YYYYMMDD_HHMMSS/`**
 
-### Running Stage B1
+### Running Stage B
 
 ```bash
-python run_stage_b1.py
+python run_stage_b.py
 ```
 
 **Current status**: Uses same features as A1 (placeholder).  
@@ -103,9 +103,9 @@ python run_stage_b1.py
 3. Trains MLP with regularization
 4. Optimizes threshold
 5. Generates visualizations
-6. Saves to `outputs/stage_b1/`
-7. Saves model to `models/stage_b1/mlp.keras`
-8. **Archives to `archives/stage_b1/run_YYYYMMDD_HHMMSS/`**
+6. Saves to `outputs/stage_b/`
+7. Saves model to `models/stage_b/mlp.keras`
+8. **Archives to `archives/stage_b/run_YYYYMMDD_HHMMSS/`**
 
 ### Analyzing Results
 
@@ -113,45 +113,45 @@ python run_stage_b1.py
 # Analyze most recent results
 python analyze_results.py
 
-# List all Stage A1 archives
-ls archives/stage_a1/
+# List all Stage A archives
+ls archives/stage_a/
 
-# List all Stage B1 archives
-ls archives/stage_b1/
+# List all Stage B archives
+ls archives/stage_b/
 
-# Compare Stage A1 runs
+# Compare Stage A runs
 python scripts/archive_manager.py --compare \
-  archives/stage_a1/run_20251209_191510 \
-  archives/stage_a1/run_20251209_193450
+  archives/stage_a/run_20251209_191510 \
+  archives/stage_a/run_20251209_193450
 ```
 
 ---
 
 ## Comparing Stages
 
-To compare Stage A1 vs Stage B1 performance:
+To compare Stage A vs Stage B performance:
 
 1. **Run both stages**:
    ```bash
-   python run_stage_a1.py
-   python run_stage_b1.py  # Once implemented
+   python run_stage_a.py
+   python run_stage_b.py  # Once implemented
    ```
 
 2. **Compare latest runs**:
    ```bash
-   # Get latest Stage A1 archive
-   ls -t archives/stage_a1/ | head -1
+   # Get latest Stage A archive
+   ls -t archives/stage_a/ | head -1
    
-   # Get latest Stage B1 archive
-   ls -t archives/stage_b1/ | head -1
+   # Get latest Stage B archive
+   ls -t archives/stage_b/ | head -1
    
    # Compare
    python scripts/archive_manager.py --compare \
-     archives/stage_a1/run_YYYYMMDD_HHMMSS \
-     archives/stage_b1/run_YYYYMMDD_HHMMSS
+     archives/stage_a/run_YYYYMMDD_HHMMSS \
+     archives/stage_b/run_YYYYMMDD_HHMMSS
    ```
 
-3. **Expected improvements** (Stage A1 → B1):
+3. **Expected improvements** (Stage A → B1):
    - Test Accuracy: 0.585 → 0.60+
    - Test AUC: 0.598 → 0.62–0.65
    - Better calibration
@@ -167,16 +167,16 @@ If you were using `run_pipeline.py`:
 
 **Old way** (still works but deprecated):
 ```bash
-python run_pipeline.py  # Redirects to Stage A1 after 3 seconds
+python run_pipeline.py  # Redirects to Stage A after 3 seconds
 ```
 
 **New way** (recommended):
 ```bash
-python run_stage_a1.py  # Direct execution
+python run_stage_a.py  # Direct execution
 ```
 
 **Changes**:
-- ✅ All Stage A1 behavior is **identical**
+- ✅ All Stage A behavior is **identical**
 - ✅ Same features, same model, same archiving
 - ✅ Only difference: organized output paths
 
@@ -197,11 +197,11 @@ python run_stage_a1.py  # Direct execution
 Each stage script has a `STAGE_NAME` constant:
 
 ```python
-# run_stage_a1.py
-STAGE_NAME = "stage_a1"
+# run_stage_a.py
+STAGE_NAME = "stage_a"
 
-# run_stage_b1.py
-STAGE_NAME = "stage_b1"
+# run_stage_b.py
+STAGE_NAME = "stage_b"
 ```
 
 This constant controls:
@@ -220,17 +220,17 @@ archive_previous_results(
 )
 ```
 
-This ensures Stage A1 and Stage B1 archives never conflict.
+This ensures Stage A and Stage B archives never conflict.
 
 ---
 
 ## Next Steps
 
-### Implementing Stage B1 Features
+### Implementing Stage B Features
 
 1. **Load team statistics**:
    ```python
-   # In run_stage_b1.py
+   # In run_stage_b.py
    df_team_stats = pd.read_csv("data/TeamStatistics.csv")
    ```
 
@@ -253,10 +253,10 @@ This ensures Stage A1 and Stage B1 archives never conflict.
 
 5. **Run and compare**:
    ```bash
-   python run_stage_b1.py
+   python run_stage_b.py
    python scripts/archive_manager.py --compare \
-     archives/stage_a1/run_latest \
-     archives/stage_b1/run_latest
+     archives/stage_a/run_latest \
+     archives/stage_b/run_latest
    ```
 
 ### Future Stages
@@ -271,8 +271,8 @@ Each will follow the same pattern with its own `run_stage_XX.py` file.
 
 ## Summary
 
-✅ **Stage A1**: Complete, optimized, ready for comparison  
-🔄 **Stage B1**: Structure ready, awaiting team statistics integration  
+✅ **Stage A**: Complete, optimized, ready for comparison  
+🔄 **Stage B**: Structure ready, awaiting team statistics integration  
 📋 **Stage C+**: Planned for future development
 
 All stages are **independent**, **reproducible**, and **comparable**.

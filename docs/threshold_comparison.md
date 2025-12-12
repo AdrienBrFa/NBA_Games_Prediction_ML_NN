@@ -10,7 +10,7 @@ This report compares model performance across different threshold optimization s
 
 ---
 
-## Stage A1 - Historical Features Only
+## Stage A - Historical Features Only
 
 ### Results Comparison
 
@@ -47,7 +47,7 @@ Actual  0  |  150  1990
 
 ---
 
-## Stage B1 Intermediate - Selected Rolling Metrics
+## Stage B Intermediate - Selected Rolling Metrics
 
 ### Results Comparison
 
@@ -84,7 +84,7 @@ Actual  0  |  386  1752
 
 ---
 
-## Stage B1 Full - Complete Feature Set
+## Stage B Full - Complete Feature Set
 
 ### Results Comparison
 
@@ -129,9 +129,9 @@ Positive values indicate that accuracy-optimized threshold performed better.
 
 | Stage | Δ Accuracy | Δ F1 Score | Δ AUC | Δ Log Loss | Threshold Shift |
 |-------|-----------|-----------|-------|-----------|----------------|
-| Stage A1 | -0.0054 | -0.0164 | -0.0044 | +0.0018 | +0.100 |
-| Stage B1-Int | +0.0013 | -0.0132 | +0.0004 | -0.0036 | +0.050 |
-| Stage B1-Full | -0.0061 | -0.0242 | -0.0009 | +0.0025 | +0.070 |
+| Stage A | -0.0054 | -0.0164 | -0.0044 | +0.0018 | +0.100 |
+| Stage B-Int | +0.0013 | -0.0132 | +0.0004 | -0.0036 | +0.050 |
+| Stage B-Full | -0.0061 | -0.0242 | -0.0009 | +0.0025 | +0.070 |
 
 
 ## Interpretation Guide

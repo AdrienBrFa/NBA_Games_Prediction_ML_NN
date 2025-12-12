@@ -1,9 +1,9 @@
-# Stage A1 – Results & Improvements
+# Stage A – Results & Improvements
 
-**Stage A1** is the first modeling stage of the project.  
+**Stage A** is the first modeling stage of the project.  
 It uses **Games.csv only**, engineered team history features, and a **simple MLP classifier**.
 
-**How to run**: `python run_stage_a1.py`
+**How to run**: `python run_stage_a.py`
 
 Two major experiments have been run and archived:
 
@@ -229,9 +229,9 @@ Validation loss: stable, no divergence
 
 ---
 
-## 7.8 Stage A1 Baseline Established ✅
+## 7.8 Stage A Baseline Established ✅
 
-With these improvements, **Stage A1 is now optimized**:
+With these improvements, **Stage A is now optimized**:
 
 | Aspect | Status |
 |--------|--------|
@@ -295,20 +295,20 @@ To break through the 0.60 AUC barrier, incorporate **TeamStatistics.csv**:
 Thanks to the archiving system, all experiments are fully reproducible:
 
 ```bash
-# Run Stage A1
-python run_stage_a1.py
+# Run Stage A
+python run_stage_a.py
 
-# View all Stage A1 runs
+# View all Stage A runs
 python scripts/archive_manager.py --list
 
-# Compare specific Stage A1 runs
+# Compare specific Stage A runs
 python scripts/archive_manager.py --compare \
-  archives/stage_a1/run_20251209_191510 \
-  archives/stage_a1/run_20251209_193450
+  archives/stage_a/run_20251209_191510 \
+  archives/stage_a/run_20251209_193450
 
 # Restore a previous model
-cp archives/stage_a1/run_20251209_193450/models/stage_a1/mlp.keras \
-   models/stage_a1/mlp.keras
+cp archives/stage_a/run_20251209_193450/models/stage_a/mlp.keras \
+   models/stage_a/mlp.keras
 ```
 
 Each archive contains:
@@ -317,10 +317,10 @@ Each archive contains:
 - ✅ `plots/` – All visualizations
 - ✅ `archive_info.json` – Metadata & timestamp
 
-**Stage separation**: Stage A1 and Stage B1 have independent:
-- Output directories: `outputs/stage_a1/` vs `outputs/stage_b1/`
-- Model directories: `models/stage_a1/` vs `models/stage_b1/`
-- Archive directories: `archives/stage_a1/` vs `archives/stage_b1/`
+**Stage separation**: Stage A and Stage B have independent:
+- Output directories: `outputs/stage_a/` vs `outputs/stage_b/`
+- Model directories: `models/stage_a/` vs `models/stage_b/`
+- Archive directories: `archives/stage_a/` vs `archives/stage_b/`
 
 This ensures no cross-contamination between experimental stages.
 
@@ -337,9 +337,9 @@ This ensures no cross-contamination between experimental stages.
 
 ---
 
-**Status**: Stage A1 is complete and optimized. Ready for Stage B (team statistics integration).
+**Status**: Stage A is complete and optimized. Ready for Stage B (team statistics integration).
 
 **Next steps**: 
-- Run Stage B1 with `python run_stage_b1.py` (structure ready)
+- Run Stage B with `python run_stage_b.py` (structure ready)
 - Integrate TeamStatistics.csv features
-- Compare Stage A1 vs Stage B1 performance using the archiving system
+- Compare Stage A vs Stage B performance using the archiving system

@@ -1,10 +1,10 @@
-# Stage B1 Design Document
+# Stage B Design Document
 
 ## Overview
 
-Stage B1 extends Stage A1 by integrating team-level performance statistics from `TeamStatistics.csv`. The goal is to improve prediction accuracy by incorporating detailed team performance metrics through rolling windows and home/away splits, while keeping the MLP model architecture identical to isolate the impact of feature engineering.
+Stage B extends Stage A by integrating team-level performance statistics from `TeamStatistics.csv`. The goal is to improve prediction accuracy by incorporating detailed team performance metrics through rolling windows and home/away splits, while keeping the MLP model architecture identical to isolate the impact of feature engineering.
 
-**Expected Performance**: Test AUC improvement from 0.598 (Stage A1) to 0.62–0.65 (Stage B1).
+**Expected Performance**: Test AUC improvement from 0.598 (Stage A) to 0.62–0.65 (Stage B).
 
 ---
 
@@ -52,8 +52,8 @@ Stage B1 extends Stage A1 by integrating team-level performance statistics from 
 
 ## Feature Engineering Specification
 
-### A. Stage A1 Features (Reused)
-All Stage A1 features are retained (~8-10 features):
+### A. Stage A Features (Reused)
+All Stage A features are retained (~8-10 features):
 - `home_season_win_pct`, `away_season_win_pct`
 - `home_last5_win_pct`, `away_last5_win_pct`
 - `rest_days_home`, `rest_days_away`
@@ -138,7 +138,7 @@ Compute home minus away for key metrics to give the model direct comparison sign
 
 | Category | Count |
 |----------|-------|
-| Stage A1 features | ~8-10 |
+| Stage A features | ~8-10 |
 | Rolling features (home + away) | ~30-40 |
 | Home/away split features | ~8 |
 | Delta features | ~8 |
@@ -165,22 +165,22 @@ Use `SimpleImputer(strategy='median')` on training set, apply to val/test.
 
 ## Model Configuration
 
-**Model**: Same MLP as Stage A1
+**Model**: Same MLP as Stage A
 - Architecture: Input(~55-65) → Dense(64, relu, L2=0.001) → Dropout(0.3) → Dense(32, relu, L2=0.001) → Dropout(0.3) → Dense(1, sigmoid)
 - Loss: Binary crossentropy
 - Optimizer: Adam
 - Metrics: Accuracy, AUC, F1
 - Callbacks: EarlyStopping(patience=5), ReduceLROnPlateau(patience=3), ModelCheckpoint
 
-**Why unchanged?**: To isolate feature improvements. If Stage B1 improves performance, we know it's due to better features, not model changes.
+**Why unchanged?**: To isolate feature improvements. If Stage B improves performance, we know it's due to better features, not model changes.
 
 ---
 
 ## Expected Outcomes
 
 ### Performance Targets
-- **Stage A1 baseline**: Test AUC = 0.598, Accuracy = 58.55%
-- **Stage B1 target**: Test AUC = 0.62–0.65, Accuracy = 60–62%
+- **Stage A baseline**: Test AUC = 0.598, Accuracy = 58.55%
+- **Stage B target**: Test AUC = 0.62–0.65, Accuracy = 60–62%
 
 ### Hypothesis
 Rolling team statistics capture:
@@ -201,12 +201,12 @@ Rolling team statistics capture:
 - [x] Inspect TeamStatistics.csv schema
 - [x] Define merge keys and validation logic
 - [x] Document feature specifications
-- [ ] Implement `features/stage_b1_teamstats.py`
-- [ ] Integrate into `run_stage_b1.py`
+- [ ] Implement `features/stage_b_teamstats.py`
+- [ ] Integrate into `run_stage_b.py`
 - [ ] Add leakage validation tests
 - [ ] Update README.md
-- [ ] Execute and archive first Stage B1 run
-- [ ] Compare Stage A1 vs B1 performance
+- [ ] Execute and archive first Stage B run
+- [ ] Compare Stage A vs B1 performance
 
 ---
 

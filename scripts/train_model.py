@@ -1,7 +1,10 @@
 """
 Model definition and training for NBA game prediction (Stage A1).
 
-This script defines a simple MLP model and trains it with early stopping.
+This script defines MLP models and trains them with early stopping.
+Supports:
+- Model 1: Original MLP (default)
+- Model 2: Enhanced MLP with team embeddings
 """
 
 import numpy as np
@@ -15,6 +18,14 @@ from tensorflow.keras import layers, callbacks  # type: ignore
 from tensorflow.keras import regularizers  # type: ignore
 from sklearn.metrics import confusion_matrix, log_loss, f1_score, roc_curve
 from scripts.visualize import plot_training_history
+
+# Import Model 2 components
+try:
+    from src.models.model_2 import create_model_2, compile_model_2
+    MODEL_2_AVAILABLE = True
+except ImportError:
+    MODEL_2_AVAILABLE = False
+    print("Warning: Model 2 not available. Only Model 1 can be used.")
 
 
 def create_mlp_model(input_dim: int, l2_reg: float = 0.001, dropout_rate: float = 0.3) -> keras.Model:
@@ -65,7 +76,14 @@ def train_model(
     patience: int = 5,
     l2_reg: float = 0.001,
     dropout_rate: float = 0.3,
-    model_save_path: str = "models/stage_a1_mlp.keras"
+    model_save_path: str = "models/stage_a1_mlp.keras",
+    model_version: int = 1,
+    home_train_ids: np.ndarray = None,
+    away_train_ids: np.ndarray = None,
+    home_val_ids: np.ndarray = None,
+    away_val_ids: np.ndarray = None,
+    num_teams: int = None,
+    embedding_dim: int = 16
 ) -> tuple:
     """
     Train the MLP model with early stopping and regularization.
@@ -81,18 +99,52 @@ def train_model(
         l2_reg: L2 regularization strength
         dropout_rate: Dropout rate
         model_save_path: Path to save the best model
+        model_version: 1 for original MLP, 2 for team embeddings (default: 1)
+        home_train_ids: Home team IDs for training (Model 2 only)
+        away_train_ids: Away team IDs for training (Model 2 only)
+        home_val_ids: Home team IDs for validation (Model 2 only)
+        away_val_ids: Away team IDs for validation (Model 2 only)
+        num_teams: Number of unique teams (Model 2 only)
+        embedding_dim: Embedding dimension (Model 2 only, default: 16)
         
     Returns:
         Tuple of (trained_model, history)
     """
-    print("Creating model...")
+    print(f"Creating Model {model_version}...")
     input_dim = X_train.shape[1]
-    model = create_mlp_model(input_dim, l2_reg=l2_reg, dropout_rate=dropout_rate)
+    
+    if model_version == 1:
+        # Original Model 1
+        model = create_mlp_model(input_dim, l2_reg=l2_reg, dropout_rate=dropout_rate)
+    elif model_version == 2:
+        # Model 2 with team embeddings
+        if not MODEL_2_AVAILABLE:
+            raise ImportError("Model 2 is not available. Please check installation.")
+        
+        if home_train_ids is None or away_train_ids is None:
+            raise ValueError("Model 2 requires home_train_ids and away_train_ids")
+        if num_teams is None:
+            raise ValueError("Model 2 requires num_teams")
+        
+        model = create_model_2(
+            num_features=input_dim,
+            num_teams=num_teams,
+            embedding_dim=embedding_dim,
+            dropout_rate=dropout_rate,
+            l2_reg=l2_reg
+        )
+        model = compile_model_2(model)
+    else:
+        raise ValueError(f"Unknown model_version: {model_version}. Must be 1 or 2.")
     
     print(f"\nModel configuration:")
+    print(f"  Model version: {model_version}")
     print(f"  L2 regularization: {l2_reg}")
     print(f"  Dropout rate: {dropout_rate}")
     print(f"  Early stopping patience: {patience} epochs")
+    if model_version == 2:
+        print(f"  Embedding dimension: {embedding_dim}")
+        print(f"  Number of teams: {num_teams}")
     
     print(f"\nModel architecture:")
     model.summary()
@@ -120,14 +172,28 @@ def train_model(
         verbose=1
     )
     
+    # Prepare training data based on model version
+    if model_version == 1:
+        train_data = (X_train, y_train)
+        val_data = (X_val, y_val)
+    else:  # model_version == 2
+        train_data = (
+            [X_train, home_train_ids.reshape(-1, 1), away_train_ids.reshape(-1, 1)],
+            y_train
+        )
+        val_data = (
+            [X_val, home_val_ids.reshape(-1, 1), away_val_ids.reshape(-1, 1)],
+            y_val
+        )
+    
     # Train model
     print(f"\nTraining model...")
     print(f"Training samples: {len(X_train)}")
     print(f"Validation samples: {len(X_val)}")
     
     history = model.fit(
-        X_train, y_train,
-        validation_data=(X_val, y_val),
+        train_data[0], train_data[1],
+        validation_data=val_data,
         epochs=epochs,
         batch_size=batch_size,
         callbacks=[early_stop, model_checkpoint, reduce_lr],
@@ -152,8 +218,10 @@ def find_optimal_threshold(
     Args:
         y_true: True labels
         y_pred_proba: Predicted probabilities
-        method: Method to use ('f1', 'youden', 'balanced')
+        method: Method to use ('f1', 'youden', 'balanced', 'accuracy', 'balanced_accuracy')
             - 'f1': Maximize F1 score
+            - 'accuracy': Maximize accuracy
+            - 'balanced_accuracy': Maximize balanced accuracy
             - 'youden': Maximize Youden's J statistic (sensitivity + specificity - 1)
             - 'balanced': Minimize difference between sensitivity and specificity
     
@@ -172,6 +240,29 @@ def find_optimal_threshold(
                 best_metric = f1
                 best_threshold = threshold
         print(f"\nOptimal threshold (F1): {best_threshold:.3f} (F1={best_metric:.4f})")
+    
+    elif method == 'accuracy':
+        for threshold in thresholds:
+            y_pred = (y_pred_proba >= threshold).astype(int)
+            acc = (y_pred == y_true).mean()
+            if acc > best_metric:
+                best_metric = acc
+                best_threshold = threshold
+        print(f"\nOptimal threshold (Accuracy): {best_threshold:.3f} (Acc={best_metric:.4f})")
+    
+    elif method == 'balanced_accuracy':
+        for threshold in thresholds:
+            y_pred = (y_pred_proba >= threshold).astype(int)
+            cm = confusion_matrix(y_true, y_pred)
+            if cm.sum() > 0:
+                tn, fp, fn, tp = cm.ravel()
+                sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
+                specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
+                balanced_acc = (sensitivity + specificity) / 2
+                if balanced_acc > best_metric:
+                    best_metric = balanced_acc
+                    best_threshold = threshold
+        print(f"\nOptimal threshold (Balanced Accuracy): {best_threshold:.3f} (BAcc={best_metric:.4f})")
     
     elif method == 'youden':
         fpr, tpr, roc_thresholds = roc_curve(y_true, y_pred_proba)
@@ -204,7 +295,10 @@ def evaluate_model(
     X: np.ndarray,
     y: np.ndarray,
     set_name: str = "Test",
-    threshold: float = 0.5
+    threshold: float = 0.5,
+    model_version: int = 1,
+    home_ids: np.ndarray = None,
+    away_ids: np.ndarray = None
 ) -> dict:
     """
     Evaluate model and return metrics.
@@ -215,21 +309,33 @@ def evaluate_model(
         y: True labels
         set_name: Name of the dataset (for printing)
         threshold: Decision threshold (default: 0.5)
+        model_version: 1 for original MLP, 2 for team embeddings (default: 1)
+        home_ids: Home team IDs (Model 2 only)
+        away_ids: Away team IDs (Model 2 only)
         
     Returns:
         Dictionary of metrics
     """
     print(f"\nEvaluating on {set_name} set (threshold={threshold:.3f})...")
     
+    # Prepare input based on model version
+    if model_version == 1:
+        model_input = X
+    else:  # model_version == 2
+        if home_ids is None or away_ids is None:
+            raise ValueError("Model 2 evaluation requires home_ids and away_ids")
+        model_input = [X, home_ids.reshape(-1, 1), away_ids.reshape(-1, 1)]
+    
     # Get predictions
-    y_pred_proba = model.predict(X, verbose=0).flatten()
+    y_pred_proba = model.predict(model_input, verbose=0).flatten()
     y_pred = (y_pred_proba >= threshold).astype(int)
     
-    # Calculate metrics
-    loss, accuracy, auc = model.evaluate(X, y, verbose=0)
+    # Calculate metrics - all using the same threshold
+    loss, _, auc = model.evaluate(model_input, y, verbose=0)[:3]
     
-    # Calculate additional metrics
+    # Calculate additional metrics (all with the specified threshold)
     cm = confusion_matrix(y, y_pred)
+    accuracy = (y_pred == y).mean()  # Accuracy with the specified threshold
     logloss = log_loss(y, y_pred_proba)
     
     metrics = {

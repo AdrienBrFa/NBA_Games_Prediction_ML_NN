@@ -22,19 +22,19 @@ The NBA game prediction pipeline now supports multiple threshold optimization st
 
 ```bash
 # Default: F1-optimized threshold (backward compatible)
-python run_stage_a1.py
+python run_stage_a.py
 
 # Accuracy-optimized threshold
-python run_stage_a1.py --threshold_metric accuracy
+python run_stage_a.py --threshold_metric accuracy
 
 # Balanced accuracy-optimized threshold
-python run_stage_a1.py --threshold_metric balanced_accuracy
+python run_stage_a.py --threshold_metric balanced_accuracy
 ```
 
 Same syntax works for all pipelines:
-- `run_stage_a1.py`
-- `run_stage_b1_intermediate.py`
-- `run_stage_b1_full.py`
+- `run_stage_a.py`
+- `run_stage_b_intermediate.py`
+- `run_stage_b_full.py`
 
 ### Compare Results
 
@@ -112,7 +112,7 @@ archive_previous_results(
 **Archive structure:**
 ```
 archives/
-├── stage_a1/
+├── stage_a/
 │   ├── run_20251212_143022_threshold-f1/
 │   │   ├── results.json  # Contains threshold_metric: "f1"
 │   │   ├── plots/
@@ -122,9 +122,9 @@ archives/
 │   │   ├── plots/
 │   │   └── archive_info.json
 │   └── ...
-├── stage_b1_intermediate/
+├── stage_b_intermediate/
 │   └── ...
-└── stage_b1_full/
+└── stage_b_full/
     └── ...
 ```
 
@@ -193,18 +193,18 @@ Updated `results.json` format:
 ### Example 1: Compare F1 vs Accuracy Optimization
 
 ```bash
-# Run Stage A1 with F1 optimization (default)
-python run_stage_a1.py
+# Run Stage A with F1 optimization (default)
+python run_stage_a.py
 
-# Run Stage A1 with Accuracy optimization
-python run_stage_a1.py --threshold_metric accuracy
+# Run Stage A with Accuracy optimization
+python run_stage_a.py --threshold_metric accuracy
 
 # Compare results
 python compare_thresholds.py
 ```
 
 **Expected outcome:**
-- Two archives in `archives/stage_a1/`
+- Two archives in `archives/stage_a/`
 - `docs/threshold_comparison.md` shows side-by-side comparison
 - Metrics table shows differences: Δ Accuracy, Δ F1, etc.
 
@@ -212,14 +212,14 @@ python compare_thresholds.py
 
 ```bash
 # Run all stages with F1 optimization
-python run_stage_a1.py
-python run_stage_b1_intermediate.py
-python run_stage_b1_full.py
+python run_stage_a.py
+python run_stage_b_intermediate.py
+python run_stage_b_full.py
 
 # Run all stages with Accuracy optimization
-python run_stage_a1.py --threshold_metric accuracy
-python run_stage_b1_intermediate.py --threshold_metric accuracy
-python run_stage_b1_full.py --threshold_metric accuracy
+python run_stage_a.py --threshold_metric accuracy
+python run_stage_b_intermediate.py --threshold_metric accuracy
+python run_stage_b_full.py --threshold_metric accuracy
 
 # Generate comprehensive comparison
 python compare_thresholds.py
@@ -309,15 +309,15 @@ Test the CLI interface:
 
 ```bash
 # Test help message
-python run_stage_a1.py --help
+python run_stage_a.py --help
 
 # Test different metrics
-python run_stage_a1.py --threshold_metric f1
-python run_stage_a1.py --threshold_metric accuracy
-python run_stage_a1.py --threshold_metric balanced_accuracy
+python run_stage_a.py --threshold_metric f1
+python run_stage_a.py --threshold_metric accuracy
+python run_stage_a.py --threshold_metric balanced_accuracy
 
 # Verify archives created with correct suffixes
-ls archives/stage_a1/
+ls archives/stage_a/
 ```
 
 ### Unit Testing
@@ -355,7 +355,7 @@ cat docs/threshold_comparison.md
 **Symptom:** `compare_thresholds.py` shows "No archived results found"
 
 **Solution:**
-1. Check archives exist: `ls archives/stage_a1/`
+1. Check archives exist: `ls archives/stage_a/`
 2. Verify `results.json` exists in each archive
 3. Ensure archives follow naming convention: `run_YYYYMMDD_HHMMSS_threshold-{metric}/`
 

@@ -1,16 +1,60 @@
-# Model 2 Plan: Enhanced MLP Architecture
+# Model 2 Plan: Enhanced MLP Architecture with Team Embeddings
 
-**Status**: Planning Phase  
-**Goal**: Improve model capacity without changing data (Stage B1)  
+**Status**: ✅ **IMPLEMENTED**  
+**Goal**: Improve model capacity with team embeddings + enhanced MLP architecture  
 **Expected Gain**: +2-4% AUC over Model 1
 
 ---
 
 ## Overview
 
-Model 2 keeps the same data (Stage B1) but introduces architectural improvements to increase model capacity and learning ability.
+Model 2 introduces architectural improvements to increase model capacity and learning ability while maintaining compatibility with all existing stages (A1, B1-intermediate, B1-full).
 
-**Key Principle**: Upgrade the model, not the data (yet).
+**Key Features**:
+- ✅ Learned team embeddings (replaces one-hot encoding)
+- ✅ Enhanced MLP architecture with BatchNorm
+- ✅ Improved regularization strategy
+- ✅ 2D embedding visualization for interpretability
+- ✅ Full backward compatibility with Model 1
+
+---
+
+## What Are Team Embeddings?
+
+### The Problem with One-Hot Encoding
+
+In Model 1, teams are represented using **one-hot encoding**:
+- 30 NBA teams → 30 binary features
+- Each team is a completely independent dimension
+- No learned relationships between teams
+- Example: `LAL = [1,0,0,...], GSW = [0,1,0,...]`
+
+**Limitations**:
+1. Large dimensionality (60 features for home + away teams)
+2. No notion of team similarity or strength
+3. Cannot generalize across similar teams
+4. Each team learned independently
+
+### The Solution: Learned Embeddings
+
+**Team embeddings** are dense, low-dimensional vector representations of teams:
+- 30 teams → 16-dimensional vectors (configurable)
+- Model learns relationships during training
+- Similar teams cluster in embedding space
+- Example: Strong defensive teams might have similar embeddings
+
+**How It Works**:
+1. Each team gets a unique integer ID (0-29)
+2. An embedding layer maps ID → dense vector (e.g., 16 dimensions)
+3. For each game: `home_emb = lookup(home_team_id)`, `away_emb = lookup(away_team_id)`
+4. Combine: `concat(home_emb, away_emb, home_emb - away_emb)`
+5. Concatenate with numeric features → MLP
+
+**Benefits**:
+- Dimensionality reduction: 60 → 48 features (for dim=16)
+- Learned team strength/style representations
+- Better generalization to new matchups
+- Interpretable via visualization
 
 ---
 
@@ -204,7 +248,7 @@ weighted_features = Multiply()([input_features, attention_scores])
 
 **Goal**: Test new architecture with minimal data
 
-**Data**: Same as Stage B1 Full (original implementation)
+**Data**: Same as Stage B Full (original implementation)
 - No seasonal reset
 - All 17 metrics
 - 203 features
@@ -219,7 +263,7 @@ weighted_features = Multiply()([input_features, attention_scores])
 
 **Goal**: Production-ready model with best data and best architecture
 
-**Data**: Stage B1 Intermediate
+**Data**: Stage B Intermediate
 - 10 core metrics
 - Seasonal reset
 - 145 features
@@ -236,7 +280,7 @@ weighted_features = Multiply()([input_features, attention_scores])
 
 **Goal**: Maximum performance benchmark
 
-**Data**: Stage B1 Full
+**Data**: Stage B Full
 - All 17 metrics
 - Continuous rolling
 - 203 features
@@ -434,16 +478,152 @@ NBA_Games_Predictions_ML_NN/
 
 ---
 
+## Implementation Details
+
+### Files Created
+
+```
+src/
+├── models/
+│   └── model_2.py              # ✅ Model 2 architecture with embeddings
+├── utils/
+    ├── team_encoding.py         # ✅ Team ID encoding utilities
+    └── embedding_viz.py         # ✅ Embedding visualization
+
+scripts/
+└── train_model.py              # ✅ Updated to support model_version parameter
+
+run_stage_a.py                 # ✅ Updated with --model_version flag
+run_stage_b_intermediate.py    # ✅ Updated with --model_version flag
+run_stage_b_full.py            # ✅ Updated with --model_version flag
+```
+
+### Usage
+
+**Train Model 2A** (Stage A + embeddings):
+```bash
+python run_stage_a.py --model_version 2 --threshold_metric f1 --embedding_dim 16
+```
+
+**Train Model 2B-intermediate**:
+```bash
+python run_stage_b_intermediate.py --model_version 2
+```
+
+**Train Model 2B-full**:
+```bash
+python run_stage_b_full.py --model_version 2
+```
+
+**CLI Arguments**:
+- `--model_version`: 1 (original MLP) or 2 (with embeddings), default=1
+- `--embedding_dim`: Embedding dimension for Model 2, default=16
+- `--threshold_metric`: f1, accuracy, or balanced_accuracy, default=f1
+
+### Backward Compatibility
+
+✅ **Model 1 remains unchanged**:
+- Default behavior: `--model_version 1`
+- All existing scripts work without modification
+- Archived Model 1 runs are preserved
+- No breaking changes to existing pipelines
+
+---
+
+## Team Embedding Visualization
+
+### What Gets Visualized
+
+After training Model 2, the pipeline automatically generates:
+
+1. **2D Embedding Plot** (`team_embeddings_2d.png`):
+   - Each point = one NBA team
+   - Points labeled with team abbreviation
+   - Similar teams cluster together
+   - Generated using PCA (Principal Component Analysis)
+
+2. **Embedding Data** (`team_embeddings_raw.csv`):
+   - Full embedding vectors for each team
+   - 2D coordinates for plotting
+   - Can be used for further analysis
+
+### How It Works
+
+1. **Training**: Model learns 16-dimensional embedding for each team
+2. **Extraction**: After training, embedding weights extracted from model
+3. **Dimensionality Reduction**: PCA reduces 16D → 2D for visualization
+4. **Plotting**: Scatter plot with team labels
+5. **Archiving**: PNG + CSV saved with run results
+
+### Interpreting the Plot
+
+**What to look for**:
+- **Clusters**: Teams with similar styles/strength group together
+- **Distance**: Closer teams = more similar embeddings
+- **Outliers**: Teams with unique characteristics
+- **Axes**: Principal components capture major variations
+
+**Example Patterns**:
+- Strong teams (e.g., GSW, LAL) might cluster
+- Weak teams might cluster separately
+- Defensive-focused teams might be near each other
+- High-pace teams vs slow-pace teams might separate
+
+**Important Notes**:
+- Embeddings are learned from **win patterns**, not stats
+- 2D is a simplified view (original is 16D)
+- Patterns emerge from training data structure
+- Different runs may have different orientations (PCA rotation)
+
+### Customization
+
+To use t-SNE instead of PCA:
+```python
+# In src/utils/embedding_viz.py
+visualize_model_2_embeddings(
+    model=model,
+    team_to_id=team_to_id,
+    reduction_method='tsne',  # Change from 'pca' to 'tsne'
+    ...
+)
+```
+
+---
+
+## Model 2 Variants
+
+### Model 2A: Stage A + Embeddings
+- **Data**: Historical game features only (no team stats)
+- **Features**: ~50 numeric + team embeddings
+- **Expected AUC**: 0.69-0.71
+- **Use Case**: Baseline for embedding effectiveness
+
+### Model 2B-intermediate: B1 Intermediate + Embeddings
+- **Data**: Historical + selected rolling stats
+- **Features**: ~40-60 numeric + team embeddings
+- **Expected AUC**: 0.68-0.70
+- **Use Case**: Balance between features and embeddings
+
+### Model 2B-full: B1 Full + Embeddings
+- **Data**: Historical + full rolling stats
+- **Features**: ~177 numeric + team embeddings
+- **Expected AUC**: 0.70-0.72
+- **Use Case**: Maximum information utilization
+
+---
+
 ## Next Steps
 
 1. ✅ **Complete documentation** (this file)
-2. 📋 **Create directory structure** (`src/models/model_2/`)
-3. 📋 **Implement team embeddings** (`embeddings.py`)
-4. 📋 **Implement Model 2 architecture** (`architecture.py`)
-5. 📋 **Create Model 2A pipeline** (`run_model_2a.py`)
-6. 📋 **Train and evaluate Model 2A**
-7. 📋 **Compare with Model 1 baseline**
-8. 📋 **Proceed to Phase 2-4 based on results**
+2. ✅ **Create directory structure** (`src/models/`, `src/utils/`)
+3. ✅ **Implement team embeddings** (`model_2.py`, `team_encoding.py`)
+4. ✅ **Implement embedding visualization** (`embedding_viz.py`)
+5. ✅ **Update all run scripts** (A1, B1-intermediate, B1-full)
+6. 📋 **Create unit tests** (test_model2_forward.py, etc.)
+7. 📋 **Train and evaluate Model 2A**
+8. 📋 **Train and evaluate Model 2B variants**
+9. 📋 **Compare with Model 1 baseline**
+10. 📋 **Document results** (`model_2_results.md`)
 
 ---
 
@@ -457,7 +637,6 @@ NBA_Games_Predictions_ML_NN/
 - Batch normalization: Ioffe & Szegedy (2015)
 - Dropout: Srivastava et al. (2014)
 - Adam optimizer: Kingma & Ba (2015)
-- AdamW: Loshchilov & Hutter (2019)
 
 **NBA Prediction Literature**:
 - Typical accuracy ceiling: 60-70%
@@ -466,6 +645,6 @@ NBA_Games_Predictions_ML_NN/
 
 ---
 
-**Document Status**: ✅ Complete  
+**Document Status**: ✅ Implementation Complete  
 **Last Updated**: December 12, 2025  
-**Next Review**: After Model 2A implementation
+**Next Review**: After Model 2 evaluation

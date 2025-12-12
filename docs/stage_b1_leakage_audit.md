@@ -1,4 +1,4 @@
-# Stage B1 Data Leakage Audit Report
+# Stage B Data Leakage Audit Report
 
 **Date**: December 12, 2025  
 **Auditor**: AI Assistant  
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Stage B1 achieved suspiciously high results (Val accuracy 99.5%, Test accuracy 84.6%, Test AUC 86.6%) due to **critical data leakage**. The model had access to **101 columns containing current game statistics**, including the game outcome itself (`home_win`, `away_win`), scores (`home_teamScore`, `away_teamScore`), and point differentials (`home_plusMinusPoints`).
+Stage B achieved suspiciously high results (Val accuracy 99.5%, Test accuracy 84.6%, Test AUC 86.6%) due to **critical data leakage**. The model had access to **101 columns containing current game statistics**, including the game outcome itself (`home_win`, `away_win`), scores (`home_teamScore`, `away_teamScore`), and point differentials (`home_plusMinusPoints`).
 
 ### Impact
 - **Before fix**: Model could see the outcome → artificially perfect predictions
@@ -20,7 +20,7 @@ Stage B1 achieved suspiciously high results (Val accuracy 99.5%, Test accuracy 8
 
 ### Findings
 
-**Total columns in Stage B1 dataset**: 302
+**Total columns in Stage B dataset**: 302
 
 **Leakage columns detected**: **101 columns**
 
@@ -161,7 +161,7 @@ exclude_cols = [
     'away_win', 'away_teamScore', 'away_opponentScore',
     ...
 ]
-# Result: ~120-150 features (ONLY rolling + Stage A1)
+# Result: ~120-150 features (ONLY rolling + Stage A)
 ```
 
 ---
@@ -176,7 +176,7 @@ Not performed yet - will run after fix to validate that top features make sense 
 
 ### Feature Categories
 
-1. **Stage A1 Historical Features** (~20 features) ✅ SAFE
+1. **Stage A Historical Features** (~20 features) ✅ SAFE
    - `seasonYear`
    - `home_season_games_played`, `home_season_wins`, `home_season_win_pct`
    - `away_season_games_played`, `away_season_wins`, `away_season_win_pct`
@@ -209,7 +209,7 @@ All columns matching these patterns (for both home and away):
 - `*_benchPoints`, `*_biggestLead`, `*_leadChanges`, etc.
 - `*_possessions`, `*_offensive_rating`, `*_defensive_rating`, `*_net_rating`, `*_point_diff` (unless rolling)
 
-**Rule of thumb**: If the column name doesn't end with `_last5`, `_last10`, `_last10_home`, or `_last10_away`, and it's not a Stage A1 feature, it's probably leaking!
+**Rule of thumb**: If the column name doesn't end with `_last5`, `_last10`, `_last10_home`, or `_last10_away`, and it's not a Stage A feature, it's probably leaking!
 
 ---
 
@@ -217,7 +217,7 @@ All columns matching these patterns (for both home and away):
 
 ### ✅ Completed
 
-1. **`audit_stage_b1_leakage.py`** - Comprehensive audit script
+1. **`audit_stage_b_leakage.py`** - Comprehensive audit script
    - Task A: Column audit (101 leakage columns identified)
    - Task B: Rolling feature validation (0 violations)
    - Task C: Merge correctness check (confirmed issue)
@@ -228,9 +228,9 @@ All columns matching these patterns (for both home and away):
 
 ### 🔄 Next Steps
 
-1. **Re-run Stage B1 pipeline**:
+1. **Re-run Stage B pipeline**:
    ```bash
-   python run_stage_b1.py
+   python run_stage_b.py
    ```
 
 2. **Validate results**:
@@ -244,7 +244,7 @@ All columns matching these patterns (for both home and away):
 
 4. **Archive comparison**:
    ```bash
-   python -c "from scripts.archive_manager import compare_archives, print_comparison; c = compare_archives('archives/stage_b1/run_BEFORE_FIX', 'archives/stage_b1/run_AFTER_FIX'); print_comparison(c)"
+   python -c "from scripts.archive_manager import compare_archives, print_comparison; c = compare_archives('archives/stage_b/run_BEFORE_FIX', 'archives/stage_b/run_AFTER_FIX'); print_comparison(c)"
    ```
 
 ---
@@ -273,19 +273,19 @@ All columns matching these patterns (for both home and away):
 - Test AUC: 0.62-0.65
 - Test Log-Loss: 0.65-0.70 (reasonable)
 
-### Comparison to Stage A1
-- Stage A1 Test AUC: 0.598
-- Stage B1 Target: 0.62-0.65
+### Comparison to Stage A
+- Stage A Test AUC: 0.598
+- Stage B Target: 0.62-0.65
 - Expected improvement: +2-5 AUC points from team statistics
 
 ---
 
 ## Conclusion
 
-The Stage B1 pipeline contained **critical data leakage** where the model had access to game outcomes and current game statistics. This has been identified and fixed by:
+The Stage B pipeline contained **critical data leakage** where the model had access to game outcomes and current game statistics. This has been identified and fixed by:
 
 1. Explicitly excluding 101 columns containing current game stats
-2. Keeping only Stage A1 features + rolling features (_last5, _last10)
+2. Keeping only Stage A features + rolling features (_last5, _last10)
 3. Validating that rolling features use correct temporal ordering
 
 The fix is implemented in `scripts/preprocessing.py`. Re-running the pipeline should now produce realistic results (~0.62-0.65 AUC).

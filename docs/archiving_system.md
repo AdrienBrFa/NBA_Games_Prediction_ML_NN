@@ -19,7 +19,7 @@ archives/run_20251209_193045/
 ├── archive_info.json          # Métadonnées de l'archive
 ├── results.json                # Résultats complets du run
 ├── models/
-│   └── stage_a1_mlp.keras     # Modèle sauvegardé
+│   └── stage_a_mlp.keras     # Modèle sauvegardé
 └── plots/                      # Toutes les visualisations
     ├── training_history.png
     ├── confusion_matrix.png
@@ -113,7 +113,7 @@ NBA_Games_Predictions_ML_NN/
 │   ├── run_20251209_190512/
 │   └── run_20251209_193045/
 └── models/                     # Modèle actuel
-    └── stage_a1_mlp.keras
+    └── stage_a_mlp.keras
 ```
 
 ## Scénarios d'Usage
@@ -132,7 +132,7 @@ NBA_Games_Predictions_ML_NN/
 python scripts/archive_manager.py --list
 
 # Copier le meilleur modèle
-cp archives/run_20251209_193045/models/stage_a1_mlp.keras models/best_model.keras
+cp archives/run_20251209_193045/models/stage_a_mlp.keras models/best_model.keras
 ```
 
 ### Analyser une régression
@@ -143,7 +143,7 @@ Si un nouveau run est moins performant :
 python scripts/archive_manager.py --compare latest
 
 # Restaurer l'ancien modèle si nécessaire
-cp archives/run_20251209_193045/models/stage_a1_mlp.keras models/stage_a1_mlp.keras
+cp archives/run_20251209_193045/models/stage_a_mlp.keras models/stage_a_mlp.keras
 ```
 
 ## Métadonnées Sauvegardées
@@ -157,7 +157,7 @@ Chaque archive contient un fichier `archive_info.json` :
   "archived_items": [
     "results.json",
     "plots/ (10 files)",
-    "models/stage_a1_mlp.keras"
+    "models/stage_a_mlp.keras"
   ],
   "original_results": {
     "timestamp": "2025-12-09T19:28:32.073717",
