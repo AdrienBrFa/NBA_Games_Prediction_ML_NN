@@ -14,6 +14,7 @@ Stage A1 uses only historical game data without team statistics.
 """
 
 import sys
+import argparse
 from pathlib import Path
 
 # Add scripts directory to path
@@ -22,16 +23,17 @@ sys.path.insert(0, str(Path(__file__).parent / "scripts"))
 from scripts.load_data import load_and_filter_games
 from scripts.feature_engineering import compute_team_features, add_delta_features
 from scripts.preprocessing import split_train_val_test, preprocess_data, save_preprocessed_data
-from scripts.train_model import train_model, evaluate_model, save_results, find_optimal_threshold
+from scripts.train_model import train_model, evaluate_model, save_results
 from scripts.visualize import generate_comprehensive_report
 from scripts.archive_manager import archive_previous_results
+from src.utils.thresholds import find_optimal_threshold
 import numpy as np
 
 # Stage configuration
 STAGE_NAME = "stage_a1"
 
 
-def main():
+def main(threshold_metric="f1"):
     """Run the complete Stage A1 pipeline."""
     print("="*80)
     print(f"NBA Game Prediction - {STAGE_NAME.upper()} Pipeline")
@@ -82,13 +84,13 @@ def main():
     
     # Step 5: Evaluate model and optimize threshold
     print("\n" + "="*80)
-    print("STEP 5: Evaluating model and optimizing decision threshold")
+    print(f"STEP 5: Evaluating model and optimizing decision threshold (metric: {threshold_metric})")
     print("="*80)
     
     # First, find optimal threshold on validation set
-    print("\n--- Finding optimal threshold on validation set ---")
+    print(f"\n--- Finding optimal threshold on validation set (optimizing {threshold_metric}) ---")
     y_val_pred_proba = model.predict(X_val, verbose=0).flatten()
-    optimal_threshold, _ = find_optimal_threshold(y_val, y_val_pred_proba, method='f1')
+    optimal_threshold, metric_values = find_optimal_threshold(y_val, y_val_pred_proba, metric=threshold_metric)
     
     # Evaluate with default threshold (0.5)
     print("\n--- Evaluation with default threshold (0.5) ---")
@@ -106,6 +108,7 @@ def main():
     save_results(
         train_metrics, val_metrics, test_metrics, history,
         optimal_threshold=optimal_threshold,
+        threshold_metric=threshold_metric,
         output_path=str(output_path / "results.json")
     )
     
@@ -147,7 +150,7 @@ def main():
     print(f"\nFinal Test Accuracy: {test_metrics['accuracy']:.4f}")
     print(f"Final Test F1 Score: {test_metrics['f1_score']:.4f}")
     print(f"Final Test AUC: {test_metrics['auc']:.4f}")
-    print(f"Optimal Decision Threshold: {optimal_threshold:.3f}")
+    print(f"Optimal Decision Threshold: {optimal_threshold:.3f} (optimized for {threshold_metric})")
     print(f"\nModel saved to: {model_save_path}")
     print(f"Results saved to: {output_path / 'results.json'}")
     print(f"Visualizations saved to: {plots_path}/")
@@ -157,7 +160,8 @@ def main():
     print("\n")
     archive_previous_results(
         outputs_dir=str(output_path),
-        archive_base_dir=f"archives/{STAGE_NAME}"
+        archive_base_dir=f"archives/{STAGE_NAME}",
+        run_suffix=f"threshold-{threshold_metric}"
     )
     
     print("\n" + "="*80)
@@ -166,4 +170,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Run Stage A1 pipeline with configurable threshold optimization")
+    parser.add_argument(
+        "--threshold_metric",
+        type=str,
+        default="f1",
+        choices=["f1", "accuracy", "balanced_accuracy"],
+        help="Metric to optimize when selecting decision threshold (default: f1)"
+    )
+    args = parser.parse_args()
+    
+    main(threshold_metric=args.threshold_metric)

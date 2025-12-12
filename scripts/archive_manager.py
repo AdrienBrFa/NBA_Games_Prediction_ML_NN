@@ -14,7 +14,8 @@ import os
 
 def archive_previous_results(
     outputs_dir: str = "outputs",
-    archive_base_dir: str = "archives"
+    archive_base_dir: str = "archives",
+    run_suffix: str = ""
 ) -> str:
     """
     Archive previous results before starting a new training run.
@@ -27,6 +28,7 @@ def archive_previous_results(
     Args:
         outputs_dir: Directory containing outputs to archive
         archive_base_dir: Base directory for archives
+        run_suffix: Optional suffix to append to run name (e.g., "threshold-f1")
         
     Returns:
         Path to the created archive directory, or empty string if nothing to archive
@@ -41,7 +43,10 @@ def archive_previous_results(
     
     # Create archive directory with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    archive_path = Path(archive_base_dir) / f"run_{timestamp}"
+    run_name = f"run_{timestamp}"
+    if run_suffix:
+        run_name += f"_{run_suffix}"
+    archive_path = Path(archive_base_dir) / run_name
     archive_path.mkdir(parents=True, exist_ok=True)
     
     print("\n" + "="*80)

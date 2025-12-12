@@ -263,12 +263,14 @@ def save_results(
     test_metrics: dict,
     history: keras.callbacks.History,
     optimal_threshold: float = 0.5,
+    threshold_metric: str = "f1",
     output_path: str = "outputs/results.json"
 ):
     """Save training and evaluation results."""
     results = {
         'timestamp': datetime.now().isoformat(),
         'optimal_threshold': float(optimal_threshold),
+        'threshold_metric': threshold_metric,
         'train_metrics': train_metrics,
         'val_metrics': val_metrics,
         'test_metrics': test_metrics,
